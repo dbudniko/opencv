@@ -129,13 +129,13 @@ namespace imgproc {
 
     G_TYPED_KERNEL(GNV12toBGR, <GMat(GMat, GMat)>, "org.opencv.imgproc.colorconvert.nv12tobgr") {
         static GMatDesc outMeta(GMatDesc in_y, GMatDesc in_uv) {
-            GAPI_Assert(in_y.chan == 1);
-            GAPI_Assert(in_uv.chan == 2);
-            GAPI_Assert(in_y.depth == CV_8U);
-            GAPI_Assert(in_uv.depth == CV_8U);
-            // UV size should be aligned with Y
-            GAPI_Assert(in_y.size.width == 2 * in_uv.size.width);
-            GAPI_Assert(in_y.size.height == 2 * in_uv.size.height);
+//            GAPI_Assert(in_y.chan == 1);
+//            GAPI_Assert(in_uv.chan == 2);
+//            GAPI_Assert(in_y.depth == CV_8U);
+//            GAPI_Assert(in_uv.depth == CV_8U);
+//            // UV size should be aligned with Y
+//            GAPI_Assert(in_y.size.width == 2 * in_uv.size.width);
+//            GAPI_Assert(in_y.size.height == 2 * in_uv.size.height);
             return in_y.withType(CV_8U, 3); // type will be CV_8UC3;
         }
     };
