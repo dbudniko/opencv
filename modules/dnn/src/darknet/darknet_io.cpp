@@ -658,6 +658,8 @@ namespace cv {
                         if (pad)
                             padding = kernel_size / 2;
 
+                        // Cannot divide 0
+                        CV_Assert(stride > 0);
                         CV_Assert(kernel_size > 0 && filters > 0);
                         CV_Assert(tensor_shape[0] > 0);
                         CV_Assert(tensor_shape[0] % groups == 0);
@@ -690,6 +692,9 @@ namespace cv {
                         int kernel_size = getParam<int>(layer_params, "size", 2);
                         int stride = getParam<int>(layer_params, "stride", 2);
                         int padding = getParam<int>(layer_params, "padding", kernel_size - 1);
+                        // Cannot divide 0
+                        CV_Assert(stride > 0);
+
                         setParams.setMaxpool(kernel_size, padding, stride);
 
                         tensor_shape[1] = (tensor_shape[1] - kernel_size + padding) / stride + 1;
@@ -732,6 +737,8 @@ namespace cv {
                     else if (layer_type == "reorg")
                     {
                         int stride = getParam<int>(layer_params, "stride", 2);
+                        // Cannot divide 0
+                        CV_Assert(stride > 0);
                         tensor_shape[0] = tensor_shape[0] * (stride * stride);
                         tensor_shape[1] = tensor_shape[1] / stride;
                         tensor_shape[2] = tensor_shape[2] / stride;
@@ -790,7 +797,7 @@ namespace cv {
                         int classes = getParam<int>(layer_params, "classes", -1);
                         int num_of_anchors = getParam<int>(layer_params, "num", -1);
                         float thresh = getParam<float>(layer_params, "thresh", 0.2);
-                        float nms_threshold = getParam<float>(layer_params, "nms_threshold", 0.4);
+                        float nms_threshold = getParam<float>(layer_params, "nms_threshold", 0.0);
                         float scale_x_y = getParam<float>(layer_params, "scale_x_y", 1.0);
 
                         std::string anchors_values = getParam<std::string>(layer_params, "anchors", std::string());

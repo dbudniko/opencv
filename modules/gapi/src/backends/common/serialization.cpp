@@ -166,13 +166,15 @@ I::IStream& operator>> (I::IStream& is, cv::Scalar& s) {
 
 namespace
 {
+
+#if !defined(GAPI_STANDALONE)
 template<typename T>
-void write_plain(I::OStream &os, const T *arr, std::size_t sz) {
-    for (auto &&it : ade::util::iota(sz)) os << arr[it];
+    void write_plain(I::OStream &os, const T *arr, std::size_t sz) {
+        for (auto &&it : ade::util::iota(sz)) os << arr[it];
 }
 template<typename T>
-void read_plain(I::IStream &is, T *arr, std::size_t sz) {
-    for (auto &&it : ade::util::iota(sz)) is >> arr[it];
+    void read_plain(I::IStream &is, T *arr, std::size_t sz) {
+        for (auto &&it : ade::util::iota(sz)) is >> arr[it];
 }
 template<typename T>
 void write_mat_data(I::OStream &os, const cv::Mat &m) {
@@ -188,10 +190,36 @@ void read_mat_data(I::IStream &is, cv::Mat &m) {
         read_plain(is, m.ptr<T>(r), m.cols*m.channels());
     }
 }
+#else
+void write_plain(I::OStream &os, const uchar *arr, std::size_t sz) {
+    for (auto &&it : ade::util::iota(sz)) os << arr[it];
+}
+void read_plain(I::IStream &is, uchar *arr, std::size_t sz) {
+    for (auto &&it : ade::util::iota(sz)) is >> arr[it];
+}
+template<typename T>
+void write_mat_data(I::OStream &os, const cv::Mat &m) {
+    // Write every row individually (handles the case when Mat is a view)
+    for (auto &&r : ade::util::iota(m.rows)) {
+        write_plain(os, m.ptr(r), m.cols*m.channels()*sizeof(T));
+    }
+}
+template<typename T>
+void read_mat_data(I::IStream &is, cv::Mat &m) {
+    // Write every row individually (handles the case when Mat is aligned)
+    for (auto &&r : ade::util::iota(m.rows)) {
+        read_plain(is, m.ptr(r), m.cols*m.channels()*sizeof(T));
+    }
+}
+#endif
 } // namespace
 
 I::OStream& operator<< (I::OStream& os, const cv::Mat &m) {
+#if !defined(GAPI_STANDALONE)
     GAPI_Assert(m.size.dims() == 2 && "Only 2D images are supported now");
+#else
+    GAPI_Assert(m.dims.size() == 2 && "Only 2D images are supported now");
+#endif
     os << m.rows << m.cols << m.type();
     switch (m.depth()) {
     case CV_8U:  write_mat_data< uint8_t>(os, m); break;
