@@ -51,9 +51,6 @@ namespace custom {
 namespace {
 
 // Define custom structures and operations
-void bbox(cv::Mat& m, const cv::Rect& rc) {
-     cv::rectangle(m, rc, cv::Scalar{ 0,255,0 }, 2, cv::LINE_8, 0);
-};
 #define NUM_REGRESSIONS 4
 #define NUM_PTS 5
 
@@ -267,17 +264,6 @@ namespace {
 void bbox(cv::Mat& m, const cv::Rect& rc) {
     cv::rectangle(m, rc, cv::Scalar{ 0,255,0 }, 2, cv::LINE_8, 0);
 };
-
-void drawRotatedRect(cv::Mat &m, const cv::RotatedRect &rc) {
-    std::vector<cv::Point2f> tmp_points(5);
-    rc.points(tmp_points.data());
-    tmp_points[4] = tmp_points[0];
-    auto prev = tmp_points.begin(), it = prev+1;
-    for (; it != tmp_points.end(); ++it) {
-        cv::line(m, *prev, *it, cv::Scalar(50, 205, 50), 2);
-        prev = it;
-    }
-}
 
 } // anonymous namespace
 } // namespace vis
