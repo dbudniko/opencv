@@ -251,7 +251,7 @@ GAPI_OCV_KERNEL(OCVRunNMS, RunNMS) {
         std::vector<Face> in_faces_copy = in_faces;
         std::vector<Face> nms_faces = Face::runNMS(in_faces_copy, threshold);
         if (!nms_faces.empty()) {
-            out_faces.insert(nms_faces.end(), nms_faces.begin(), nms_faces.end());
+            out_faces.insert(out_faces.end(), nms_faces.begin(), nms_faces.end());
         }
     }
 };// GAPI_OCV_KERNEL(RunNMS)
@@ -361,6 +361,10 @@ int main(int argc, char *argv[])
     cv::Mat image;
     std::vector<custom::Face> out_faces;
 
+    std::cout << "PULL!!!" << std::endl;
+    pipeline_mtcnn.pull(cv::gout(image, out_faces));
+    std::cout << "PULL EXIT!!! faces number " << out_faces.size() << std::endl;
+
     tm.start();
     int frames = 0;
     while (pipeline_mtcnn.pull(cv::gout(image, out_faces))) {
@@ -372,6 +376,7 @@ int main(int argc, char *argv[])
         cv::putText(image, fps_str, { 0,32 }, cv::FONT_HERSHEY_SIMPLEX, 1.0, { 0,255,0 }, 2);
         cv::imshow("Out", image);
         cv::waitKey(1);
+        out_faces.clear();
         tm.start();
     }
     tm.stop();
