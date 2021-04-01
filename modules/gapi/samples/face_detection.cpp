@@ -280,7 +280,7 @@ int main(int argc, char *argv[])
     const auto tmcnnp_model_path  = cmd.get<std::string>("mtcnnpm");
     const auto tmcnnp_target_dev = cmd.get<std::string>("mtcnnpd");
     const auto tmcnnp_conf_thresh = cmd.get<double>("thrp");
-
+#if 0
     //Proposal part of graph
     //960x540
     cv::GMat in_original;
@@ -327,6 +327,54 @@ int main(int argc, char *argv[])
     nms_p_faces = custom::RunNMS::on(faces5, 0.5f);
 
     cv::GComputation graph_mtcnn(cv::GIn(in_original), cv::GOut(cv::gapi::copy(in_original), nms_p_faces));
+#else
+    //Proposal part of graph
+    //960x540
+    cv::GMat in_original;
+    cv::GMat in0 = cv::gapi::resize(in_original, cv::Size(960, 540));
+    cv::GMat regressions0, scores0;
+    std::tie(regressions0, scores0) = cv::gapi::infer<custom::MTCNNProposal>(in0);
+    float currentScale = 0.5f;
+    cv::GArray<custom::Face> faces0 = custom::BuildFaces::on(regressions0, scores0, currentScale, tmcnnp_conf_thresh);
+    cv::GArray<custom::Face> nms_p_faces0 = custom::RunNMS::on(faces0, 0.5f);
+    //480x270
+    cv::GMat in1 = cv::gapi::resize(in0, cv::Size(480, 270));
+    cv::GMat regressions1, scores1;
+    std::tie(regressions1, scores1) = cv::gapi::infer<custom::MTCNNProposal>(in1);
+    currentScale = currentScale / 2.0f;
+    cv::GArray<custom::Face> faces1 = custom::BuildFaces::on(regressions1, scores1, currentScale, tmcnnp_conf_thresh);
+    cv::GArray<custom::Face> nms_p_faces1 = custom::RunNMS::on(faces1, 0.5f);
+    //240x135
+    cv::GMat in2 = cv::gapi::resize(in1, cv::Size(240, 135));
+    cv::GMat regressions2, scores2;
+    std::tie(regressions2, scores2) = cv::gapi::infer<custom::MTCNNProposal>(in2);
+    currentScale = currentScale / 2.0f;
+    cv::GArray<custom::Face> faces2 = custom::BuildFaces::on(regressions2, scores2, currentScale, tmcnnp_conf_thresh);
+    cv::GArray<custom::Face> nms_p_faces2 = custom::RunNMS::on(faces2, 0.5f);
+    //120x67
+    cv::GMat in3 = cv::gapi::resize(in2, cv::Size(120, 67));
+    cv::GMat regressions3, scores3;
+    std::tie(regressions3, scores3) = cv::gapi::infer<custom::MTCNNProposal>(in3);
+    currentScale = currentScale / 2.0f;
+    cv::GArray<custom::Face> faces3 = custom::BuildFaces::on(regressions3, scores3, currentScale, tmcnnp_conf_thresh);
+    cv::GArray<custom::Face> nms_p_faces3 = custom::RunNMS::on(faces3, 0.5f);
+    //60x33
+    cv::GMat in4 = cv::gapi::resize(in2, cv::Size(60, 33));
+    cv::GMat regressions4, scores4;
+    std::tie(regressions4, scores4) = cv::gapi::infer<custom::MTCNNProposal>(in4);
+    currentScale = currentScale / 2.0f;
+    cv::GArray<custom::Face> faces4 = custom::BuildFaces::on(regressions4, scores4, currentScale, tmcnnp_conf_thresh);
+    cv::GArray<custom::Face> nms_p_faces4 = custom::RunNMS::on(faces4, 0.5f);
+    //30x16
+    cv::GMat in5 = cv::gapi::resize(in2, cv::Size(30, 16));
+    cv::GMat regressions5, scores5;
+    std::tie(regressions5, scores5) = cv::gapi::infer<custom::MTCNNProposal>(in5);
+    currentScale = currentScale / 2.0f;
+    cv::GArray<custom::Face> faces5 = custom::BuildFaces::on(regressions5, scores5, currentScale, tmcnnp_conf_thresh);
+    cv::GArray<custom::Face> nms_p_faces5 = custom::RunNMS::on(faces5, 0.5f);
+
+    cv::GComputation graph_mtcnn(cv::GIn(in_original), cv::GOut(cv::gapi::copy(in_original), nms_p_faces0, nms_p_faces1, nms_p_faces2, nms_p_faces3, nms_p_faces4, nms_p_faces5));
+#endif
 
     // MTCNN Proposal detection network
     auto mtcnnp_net = cv::gapi::ie::Params<custom::MTCNNProposal>{
@@ -359,6 +407,7 @@ int main(int argc, char *argv[])
     // Declare the output data & run the processing loop
     cv::TickMeter tm;
     cv::Mat image;
+#if 0
     std::vector<custom::Face> out_faces;
 
     std::cout << "PULL!!!" << std::endl;
@@ -379,6 +428,44 @@ int main(int argc, char *argv[])
         out_faces.clear();
         tm.start();
     }
+#else
+    std::vector<custom::Face> out_faces0;
+    std::vector<custom::Face> out_faces1;
+    std::vector<custom::Face> out_faces2;
+    std::vector<custom::Face> out_faces3;
+    std::vector<custom::Face> out_faces4;
+    std::vector<custom::Face> out_faces5;
+
+    std::cout << "PULL!!!" << std::endl;
+    pipeline_mtcnn.pull(cv::gout(image, out_faces0, out_faces1, out_faces2, out_faces3, out_faces4, out_faces5));
+    std::cout << "PULL EXIT!!! faces number " << out_faces0.size() << std::endl;
+
+    tm.start();
+    int frames = 0;
+    while (pipeline_mtcnn.pull(cv::gout(image, out_faces0, out_faces1, out_faces2, out_faces3, out_faces4, out_faces5))) {
+        frames++;
+        // Visualize results on the frame
+        for (auto&& rc : out_faces0) vis::bbox(image, rc.bbox.getRect());
+        for (auto&& rc : out_faces1) vis::bbox(image, rc.bbox.getRect());
+        for (auto&& rc : out_faces2) vis::bbox(image, rc.bbox.getRect());
+        for (auto&& rc : out_faces3) vis::bbox(image, rc.bbox.getRect());
+        for (auto&& rc : out_faces4) vis::bbox(image, rc.bbox.getRect());
+        for (auto&& rc : out_faces5) vis::bbox(image, rc.bbox.getRect());
+
+        tm.stop();
+        const auto fps_str = std::to_string(frames / tm.getTimeSec()) + " FPS";
+        cv::putText(image, fps_str, { 0,32 }, cv::FONT_HERSHEY_SIMPLEX, 1.0, { 0,255,0 }, 2);
+        cv::imshow("Out", image);
+        cv::waitKey(1);
+        out_faces0.clear();
+        out_faces1.clear();
+        out_faces2.clear();
+        out_faces3.clear();
+        out_faces4.clear();
+        out_faces5.clear();
+        tm.start();
+    }
+#endif
     tm.stop();
     std::cout << "Processed " << frames << " frames"
               << " (" << frames / tm.getTimeSec() << " FPS)" << std::endl;
