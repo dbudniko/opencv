@@ -240,6 +240,7 @@ GAPI_OCV_KERNEL(OCVBuildFaces, BuildFaces) {
                     float threshold,
                     std::vector<Face> &out_faces) {
         out_faces = buildFaces(in_scores, in_regresssions, scaleFactor, threshold);
+        std::cout << "OCVBuildFaces!!! faces number " << out_faces.size() << std::endl;
     }
 };// GAPI_OCV_KERNEL(BuildFaces)
 
@@ -390,7 +391,7 @@ int main(int argc, char *argv[])
     auto kernels_mtcnn = cv::gapi::kernels< custom::OCVBuildFaces
         , custom::OCVRunNMS
     >();
-    auto pipeline_mtcnn = graph_mtcnn.compileStreaming(cv::compile_args(kernels_mtcnn, networks_mtcnn));
+    auto pipeline_mtcnn = graph_mtcnn.compileStreaming(cv::compile_args(networks_mtcnn, kernels_mtcnn));
 
 
     std::cout << "Reading " << input_file_name << std::endl;
