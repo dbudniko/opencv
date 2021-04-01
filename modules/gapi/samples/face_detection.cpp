@@ -340,7 +340,7 @@ int main(int argc, char *argv[])
     cv::GArray<custom::Face> faces5 = custom::BuildFaces::on(regressions5, scores5, currentScale, tmcnnp_conf_thresh);
     nms_p_faces = custom::RunNMS::on(faces5, 0.5f);
 
-    cv::GComputation graph_mtcnn(cv::GIn(in_original), cv::GOut(nms_p_faces));
+    cv::GComputation graph_mtcnn(cv::GIn(in_original), cv::GOut(cv::gapi::copy(in_original), nms_p_faces));
 
     // MTCNN Proposal detection network
     auto mtcnnp_net = cv::gapi::ie::Params<custom::MTCNNProposal>{
