@@ -280,7 +280,7 @@ int main(int argc, char *argv[])
     const auto tmcnnp_model_path  = cmd.get<std::string>("mtcnnpm");
     const auto tmcnnp_target_dev = cmd.get<std::string>("mtcnnpd");
     const auto tmcnnp_conf_thresh = cmd.get<double>("thrp");
-#if 0
+#if 1
     //Proposal part of graph
     //960x540
     cv::GMat in_original;
@@ -290,6 +290,7 @@ int main(int argc, char *argv[])
     float currentScale = 0.5f;
     cv::GArray<custom::Face> faces0 = custom::BuildFaces::on(regressions0, scores0, currentScale, tmcnnp_conf_thresh);
     cv::GArray<custom::Face> nms_p_faces = custom::RunNMS::on(faces0, 0.5f);
+#if 0
     //480x270
     cv::GMat in1 = cv::gapi::resize(in0, cv::Size(480, 270));
     cv::GMat regressions1, scores1;
@@ -325,7 +326,7 @@ int main(int argc, char *argv[])
     currentScale = currentScale / 2.0f;
     cv::GArray<custom::Face> faces5 = custom::BuildFaces::on(regressions5, scores5, currentScale, tmcnnp_conf_thresh);
     nms_p_faces = custom::RunNMS::on(faces5, 0.5f);
-
+#endif
     cv::GComputation graph_mtcnn(cv::GIn(in_original), cv::GOut(cv::gapi::copy(in_original), nms_p_faces));
 #else
     //Proposal part of graph
@@ -407,7 +408,7 @@ int main(int argc, char *argv[])
     // Declare the output data & run the processing loop
     cv::TickMeter tm;
     cv::Mat image;
-#if 0
+#if 1
     std::vector<custom::Face> out_faces;
 
     std::cout << "PULL!!!" << std::endl;
