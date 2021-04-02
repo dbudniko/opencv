@@ -304,7 +304,7 @@ const float P_NET_WINDOW_SIZE = 12.f;int main(int argc, char *argv[])
     cv::GMat regressions0, scores0;
     std::tie(regressions0, scores0) = cv::gapi::infer<custom::MTCNNProposal>(in0);
     float currentScale = 0.5f;
-    cv::GArray<custom::Face> faces0 = custom::BuildFaces::on(regressions0, scores0, currentScale, tmcnnp_conf_thresh);
+    cv::GArray<custom::Face> faces0 = custom::BuildFaces::on(scores0, regressions0, currentScale, tmcnnp_conf_thresh);
     cv::GArray<custom::Face> nms_p_faces = custom::RunNMS::on(faces0, 0.5f);
 #if 1
     //480x270
@@ -312,35 +312,35 @@ const float P_NET_WINDOW_SIZE = 12.f;int main(int argc, char *argv[])
     cv::GMat regressions1, scores1;
     std::tie(regressions1, scores1) = cv::gapi::infer<custom::MTCNNProposal>(in1);
     currentScale = currentScale/2.0f;
-    cv::GArray<custom::Face> faces1 = custom::BuildFaces::on(regressions1, scores1, currentScale, tmcnnp_conf_thresh);
+    cv::GArray<custom::Face> faces1 = custom::BuildFaces::on(scores1, regressions1, currentScale, tmcnnp_conf_thresh);
     nms_p_faces = custom::RunNMS::on(faces1, 0.5f);
     //240x135
     cv::GMat in2 = cv::gapi::resize(in1, cv::Size(240, 135));
     cv::GMat regressions2, scores2;
     std::tie(regressions2, scores2) = cv::gapi::infer<custom::MTCNNProposal>(in2);
     currentScale = currentScale / 2.0f;
-    cv::GArray<custom::Face> faces2 = custom::BuildFaces::on(regressions2, scores2, currentScale, tmcnnp_conf_thresh);
+    cv::GArray<custom::Face> faces2 = custom::BuildFaces::on(scores2, regressions2, currentScale, tmcnnp_conf_thresh);
     nms_p_faces = custom::RunNMS::on(faces2, 0.5f);
     //120x67
     cv::GMat in3 = cv::gapi::resize(in2, cv::Size(120, 67));
     cv::GMat regressions3, scores3;
     std::tie(regressions3, scores3) = cv::gapi::infer<custom::MTCNNProposal>(in3);
     currentScale = currentScale / 2.0f;
-    cv::GArray<custom::Face> faces3 = custom::BuildFaces::on(regressions3, scores3, currentScale, tmcnnp_conf_thresh);
+    cv::GArray<custom::Face> faces3 = custom::BuildFaces::on(scores3, regressions3, currentScale, tmcnnp_conf_thresh);
     nms_p_faces = custom::RunNMS::on(faces3, 0.5f);
     //60x33
     cv::GMat in4 = cv::gapi::resize(in2, cv::Size(60, 33));
     cv::GMat regressions4, scores4;
     std::tie(regressions4, scores4) = cv::gapi::infer<custom::MTCNNProposal>(in4);
     currentScale = currentScale / 2.0f;
-    cv::GArray<custom::Face> faces4 = custom::BuildFaces::on(regressions4, scores4, currentScale, tmcnnp_conf_thresh);
+    cv::GArray<custom::Face> faces4 = custom::BuildFaces::on(scores4, regressions4, currentScale, tmcnnp_conf_thresh);
     nms_p_faces = custom::RunNMS::on(faces4, 0.5f);
     //30x16
     cv::GMat in5 = cv::gapi::resize(in2, cv::Size(30, 16));
     cv::GMat regressions5, scores5;
     std::tie(regressions5, scores5) = cv::gapi::infer<custom::MTCNNProposal>(in5);
     currentScale = currentScale / 2.0f;
-    cv::GArray<custom::Face> faces5 = custom::BuildFaces::on(regressions5, scores5, currentScale, tmcnnp_conf_thresh);
+    cv::GArray<custom::Face> faces5 = custom::BuildFaces::on(scores5, regressions5, currentScale, tmcnnp_conf_thresh);
     nms_p_faces = custom::RunNMS::on(faces5, 0.5f);
 #endif
     cv::GComputation graph_mtcnn(cv::GIn(in_original), cv::GOut(cv::gapi::copy(in_original), nms_p_faces));
@@ -353,42 +353,42 @@ const float P_NET_WINDOW_SIZE = 12.f;int main(int argc, char *argv[])
     cv::GMat regressions0, scores0;
     std::tie(regressions0, scores0) = cv::gapi::infer<custom::MTCNNProposal>(in0);
     float currentScale = 0.5f;
-    cv::GArray<custom::Face> faces0 = custom::BuildFaces::on(regressions0, scores0, currentScale, tmcnnp_conf_thresh);
+    cv::GArray<custom::Face> faces0 = custom::BuildFaces::on(scores0, regressions0, currentScale, tmcnnp_conf_thresh);
     cv::GArray<custom::Face> nms_p_faces0 = custom::RunNMS::on(faces0, 0.5f);
     //480x270
     cv::GMat in1 = cv::gapi::resize(in0, cv::Size(480, 270));
     cv::GMat regressions1, scores1;
     std::tie(regressions1, scores1) = cv::gapi::infer<custom::MTCNNProposal>(in1);
     currentScale = currentScale / 2.0f;
-    cv::GArray<custom::Face> faces1 = custom::BuildFaces::on(regressions1, scores1, currentScale, tmcnnp_conf_thresh);
+    cv::GArray<custom::Face> faces1 = custom::BuildFaces::on(scores1, regressions1, currentScale, tmcnnp_conf_thresh);
     cv::GArray<custom::Face> nms_p_faces1 = custom::RunNMS::on(faces1, 0.5f);
     //240x135
     cv::GMat in2 = cv::gapi::resize(in1, cv::Size(240, 135));
     cv::GMat regressions2, scores2;
     std::tie(regressions2, scores2) = cv::gapi::infer<custom::MTCNNProposal>(in2);
     currentScale = currentScale / 2.0f;
-    cv::GArray<custom::Face> faces2 = custom::BuildFaces::on(regressions2, scores2, currentScale, tmcnnp_conf_thresh);
+    cv::GArray<custom::Face> faces2 = custom::BuildFaces::on(scores2, regressions2, currentScale, tmcnnp_conf_thresh);
     cv::GArray<custom::Face> nms_p_faces2 = custom::RunNMS::on(faces2, 0.5f);
     //120x67
     cv::GMat in3 = cv::gapi::resize(in2, cv::Size(120, 67));
     cv::GMat regressions3, scores3;
     std::tie(regressions3, scores3) = cv::gapi::infer<custom::MTCNNProposal>(in3);
     currentScale = currentScale / 2.0f;
-    cv::GArray<custom::Face> faces3 = custom::BuildFaces::on(regressions3, scores3, currentScale, tmcnnp_conf_thresh);
+    cv::GArray<custom::Face> faces3 = custom::BuildFaces::on(scores3, regressions3, currentScale, tmcnnp_conf_thresh);
     cv::GArray<custom::Face> nms_p_faces3 = custom::RunNMS::on(faces3, 0.5f);
     //60x33
     cv::GMat in4 = cv::gapi::resize(in2, cv::Size(60, 33));
     cv::GMat regressions4, scores4;
     std::tie(regressions4, scores4) = cv::gapi::infer<custom::MTCNNProposal>(in4);
     currentScale = currentScale / 2.0f;
-    cv::GArray<custom::Face> faces4 = custom::BuildFaces::on(regressions4, scores4, currentScale, tmcnnp_conf_thresh);
+    cv::GArray<custom::Face> faces4 = custom::BuildFaces::on(scores4, regressions4, currentScale, tmcnnp_conf_thresh);
     cv::GArray<custom::Face> nms_p_faces4 = custom::RunNMS::on(faces4, 0.5f);
     //30x16
     cv::GMat in5 = cv::gapi::resize(in2, cv::Size(30, 16));
     cv::GMat regressions5, scores5;
     std::tie(regressions5, scores5) = cv::gapi::infer<custom::MTCNNProposal>(in5);
     currentScale = currentScale / 2.0f;
-    cv::GArray<custom::Face> faces5 = custom::BuildFaces::on(regressions5, scores5, currentScale, tmcnnp_conf_thresh);
+    cv::GArray<custom::Face> faces5 = custom::BuildFaces::on(scores5, regressions5, currentScale, tmcnnp_conf_thresh);
     cv::GArray<custom::Face> nms_p_faces5 = custom::RunNMS::on(faces5, 0.5f);
 
     cv::GComputation graph_mtcnn(cv::GIn(in_original), cv::GOut(cv::gapi::copy(in_original), nms_p_faces0, nms_p_faces1, nms_p_faces2, nms_p_faces3, nms_p_faces4, nms_p_faces5));
