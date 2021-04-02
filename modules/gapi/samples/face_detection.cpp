@@ -224,14 +224,38 @@ G_API_OP(BuildFaces,
     }
 };
 
-G_API_OP(RunNMS,
+G_API_OP(RunNMSAccum,
          <GFaces(GFaces, float)>,
-          "sample.custom.mtcnn.run_nms") {
+          "sample.custom.mtcnn.run_nms_accum") {
     static cv::GArrayDesc outMeta(const cv::GArrayDesc&,
                                   float) {
         return cv::empty_array_desc();
     }
 };
+
+G_API_OP(RunNMS,
+    <GFaces(GFaces, float)>,
+    "sample.custom.mtcnn.run_nms") {
+    static cv::GArrayDesc outMeta(const cv::GArrayDesc&,
+        float) {
+        return cv::empty_array_desc();
+    }
+};
+
+G_API_OP(MergePyramidOutputs,
+    <GFaces(GFaces, GFaces, GFaces, GFaces, GFaces, GFaces)>,
+    "sample.custom.mtcnn.merge_pyramid_outputs") {
+    static cv::GArrayDesc outMeta(const cv::GArrayDesc&,
+                                  const cv::GArrayDesc&,
+                                  const cv::GArrayDesc&,
+                                  const cv::GArrayDesc&,
+                                  const cv::GArrayDesc&,
+                                  const cv::GArrayDesc&
+        ) {
+        return cv::empty_array_desc();
+    }
+};
+
 
 GAPI_OCV_KERNEL(OCVBuildFaces, BuildFaces) {
     static void run(const cv::Mat & in_scores,
@@ -245,7 +269,7 @@ GAPI_OCV_KERNEL(OCVBuildFaces, BuildFaces) {
 };// GAPI_OCV_KERNEL(BuildFaces)
 
 
-GAPI_OCV_KERNEL(OCVRunNMS, RunNMS) {
+GAPI_OCV_KERNEL(OCVRunNMSAccum, RunNMSAccum) {
     static void run(const std::vector<Face> &in_faces,
                     float threshold,
                     std::vector<Face> &out_faces) {
@@ -255,7 +279,46 @@ GAPI_OCV_KERNEL(OCVRunNMS, RunNMS) {
             out_faces.insert(out_faces.end(), nms_faces.begin(), nms_faces.end());
         }
     }
+};// GAPI_OCV_KERNEL(RunNMSAccum)
+
+GAPI_OCV_KERNEL(OCVRunNMS, RunNMS) {
+    static void run(const std::vector<Face> &in_faces,
+        float threshold,
+        std::vector<Face> &out_faces) {
+        std::vector<Face> in_faces_copy = in_faces;
+        out_faces = Face::runNMS(in_faces_copy, threshold);
+    }
 };// GAPI_OCV_KERNEL(RunNMS)
+
+
+GAPI_OCV_KERNEL(OCVMergePyramidOutputs, MergePyramidOutputs) {
+    static void run(const std::vector<Face> &in_faces0,
+                    const std::vector<Face> &in_faces1,
+                    const std::vector<Face> &in_faces2,
+                    const std::vector<Face> &in_faces3,
+                    const std::vector<Face> &in_faces4,
+                    const std::vector<Face> &in_faces5,
+                    std::vector<Face> &out_faces) {
+        if (!in_faces0.empty()) {
+            out_faces.insert(out_faces.end(), in_faces0.begin(), in_faces0.end());
+        }
+        if (!in_faces1.empty()) {
+            out_faces.insert(out_faces.end(), in_faces1.begin(), in_faces1.end());
+        }
+        if (!in_faces2.empty()) {
+            out_faces.insert(out_faces.end(), in_faces2.begin(), in_faces2.end());
+        }
+        if (!in_faces3.empty()) {
+            out_faces.insert(out_faces.end(), in_faces3.begin(), in_faces3.end());
+        }
+        if (!in_faces4.empty()) {
+            out_faces.insert(out_faces.end(), in_faces4.begin(), in_faces4.end());
+        }
+        if (!in_faces5.empty()) {
+            out_faces.insert(out_faces.end(), in_faces5.begin(), in_faces5.end());
+        }
+    }
+};// GAPI_OCV_KERNEL(RunNMSAccum)
 
 } // anonymous namespace
 } // namespace custom
@@ -296,7 +359,7 @@ const float P_NET_WINDOW_SIZE = 12.f;int main(int argc, char *argv[])
     const auto tmcnnp_model_path  = cmd.get<std::string>("mtcnnpm");
     const auto tmcnnp_target_dev = cmd.get<std::string>("mtcnnpd");
     const auto tmcnnp_conf_thresh = cmd.get<double>("thrp");
-#if 1
+#if 0
     //Proposal part of graph
     //960x540
     cv::GMat in_original;
@@ -305,7 +368,7 @@ const float P_NET_WINDOW_SIZE = 12.f;int main(int argc, char *argv[])
     std::tie(regressions0, scores0) = cv::gapi::infer<custom::MTCNNProposal>(in0);
     float currentScale = 0.5f;
     cv::GArray<custom::Face> faces0 = custom::BuildFaces::on(scores0, regressions0, currentScale, tmcnnp_conf_thresh);
-    cv::GArray<custom::Face> nms_p_faces = custom::RunNMS::on(faces0, 0.5f);
+    cv::GArray<custom::Face> nms_p_faces = custom::RunNMSAccum::on(faces0, 0.5f);
 #if 1
     //480x270
     cv::GMat in1 = cv::gapi::resize(in0, cv::Size(480, 270));
@@ -313,35 +376,35 @@ const float P_NET_WINDOW_SIZE = 12.f;int main(int argc, char *argv[])
     std::tie(regressions1, scores1) = cv::gapi::infer<custom::MTCNNProposal>(in1);
     currentScale = currentScale/2.0f;
     cv::GArray<custom::Face> faces1 = custom::BuildFaces::on(scores1, regressions1, currentScale, tmcnnp_conf_thresh);
-    nms_p_faces = custom::RunNMS::on(faces1, 0.5f);
+    nms_p_faces = custom::RunNMSAccum::on(faces1, 0.5f);
     //240x135
     cv::GMat in2 = cv::gapi::resize(in1, cv::Size(240, 135));
     cv::GMat regressions2, scores2;
     std::tie(regressions2, scores2) = cv::gapi::infer<custom::MTCNNProposal>(in2);
     currentScale = currentScale / 2.0f;
     cv::GArray<custom::Face> faces2 = custom::BuildFaces::on(scores2, regressions2, currentScale, tmcnnp_conf_thresh);
-    nms_p_faces = custom::RunNMS::on(faces2, 0.5f);
+    nms_p_faces = custom::RunNMSAccum::on(faces2, 0.5f);
     //120x67
     cv::GMat in3 = cv::gapi::resize(in2, cv::Size(120, 67));
     cv::GMat regressions3, scores3;
     std::tie(regressions3, scores3) = cv::gapi::infer<custom::MTCNNProposal>(in3);
     currentScale = currentScale / 2.0f;
     cv::GArray<custom::Face> faces3 = custom::BuildFaces::on(scores3, regressions3, currentScale, tmcnnp_conf_thresh);
-    nms_p_faces = custom::RunNMS::on(faces3, 0.5f);
+    nms_p_faces = custom::RunNMSAccum::on(faces3, 0.5f);
     //60x33
     cv::GMat in4 = cv::gapi::resize(in2, cv::Size(60, 33));
     cv::GMat regressions4, scores4;
     std::tie(regressions4, scores4) = cv::gapi::infer<custom::MTCNNProposal>(in4);
     currentScale = currentScale / 2.0f;
     cv::GArray<custom::Face> faces4 = custom::BuildFaces::on(scores4, regressions4, currentScale, tmcnnp_conf_thresh);
-    nms_p_faces = custom::RunNMS::on(faces4, 0.5f);
+    nms_p_faces = custom::RunNMSAccum::on(faces4, 0.5f);
     //30x16
     cv::GMat in5 = cv::gapi::resize(in2, cv::Size(30, 16));
     cv::GMat regressions5, scores5;
     std::tie(regressions5, scores5) = cv::gapi::infer<custom::MTCNNProposal>(in5);
     currentScale = currentScale / 2.0f;
     cv::GArray<custom::Face> faces5 = custom::BuildFaces::on(scores5, regressions5, currentScale, tmcnnp_conf_thresh);
-    nms_p_faces = custom::RunNMS::on(faces5, 0.5f);
+    nms_p_faces = custom::RunNMSAccum::on(faces5, 0.5f);
 #endif
     cv::GComputation graph_mtcnn(cv::GIn(in_original), cv::GOut(cv::gapi::copy(in_original), nms_p_faces));
     //cv::GComputation graph_mtcnn(cv::GIn(in_original), cv::GOut(cv::gapi::copy(in_original), faces0));
@@ -390,8 +453,9 @@ const float P_NET_WINDOW_SIZE = 12.f;int main(int argc, char *argv[])
     currentScale = currentScale / 2.0f;
     cv::GArray<custom::Face> faces5 = custom::BuildFaces::on(scores5, regressions5, currentScale, tmcnnp_conf_thresh);
     cv::GArray<custom::Face> nms_p_faces5 = custom::RunNMS::on(faces5, 0.5f);
-
-    cv::GComputation graph_mtcnn(cv::GIn(in_original), cv::GOut(cv::gapi::copy(in_original), nms_p_faces0, nms_p_faces1, nms_p_faces2, nms_p_faces3, nms_p_faces4, nms_p_faces5));
+    cv::GArray<custom::Face> nms_p_faces_total = custom::MergePyramidOutputs::on(nms_p_faces0, nms_p_faces1, nms_p_faces2, nms_p_faces3, nms_p_faces4, nms_p_faces5);
+    //cv::GComputation graph_mtcnn(cv::GIn(in_original), cv::GOut(cv::gapi::copy(in_original), nms_p_faces0, nms_p_faces1, nms_p_faces2, nms_p_faces3, nms_p_faces4, nms_p_faces5));
+    cv::GComputation graph_mtcnn(cv::GIn(in_original), cv::GOut(cv::gapi::copy(in_original), nms_p_faces_total));
 #endif
 
     // MTCNN Proposal detection network
@@ -406,6 +470,8 @@ const float P_NET_WINDOW_SIZE = 12.f;int main(int argc, char *argv[])
 
     auto kernels_mtcnn = cv::gapi::kernels< custom::OCVBuildFaces
         , custom::OCVRunNMS
+        , custom::OCVRunNMSAccum
+        , custom::OCVMergePyramidOutputs
     >();
     auto pipeline_mtcnn = graph_mtcnn.compileStreaming(cv::compile_args(networks_mtcnn, kernels_mtcnn));
 
@@ -454,9 +520,9 @@ const float P_NET_WINDOW_SIZE = 12.f;int main(int argc, char *argv[])
     std::vector<custom::Face> out_faces4;
     std::vector<custom::Face> out_faces5;
 
-    std::cout << "PULL!!!" << std::endl;
-    pipeline_mtcnn.pull(cv::gout(image, out_faces0, out_faces1, out_faces2, out_faces3, out_faces4, out_faces5));
-    std::cout << "PULL EXIT!!! faces number " << out_faces0.size() << std::endl;
+    //std::cout << "PULL!!!" << std::endl;
+    //pipeline_mtcnn.pull(cv::gout(image, out_faces0, out_faces1, out_faces2, out_faces3, out_faces4, out_faces5));
+    //std::cout << "PULL EXIT!!! faces number " << out_faces0.size() << std::endl;
 
     tm.start();
     int frames = 0;
