@@ -290,8 +290,8 @@ int main(int argc, char *argv[])
     std::tie(regressions0, scores0) = cv::gapi::infer<custom::MTCNNProposal>(in0);
     float currentScale = 0.5f;
     cv::GArray<custom::Face> faces0 = custom::BuildFaces::on(regressions0, scores0, currentScale, tmcnnp_conf_thresh);
-    //cv::GArray<custom::Face> nms_p_faces = custom::RunNMS::on(faces0, 0.5f);
-#if 0
+    cv::GArray<custom::Face> nms_p_faces = custom::RunNMS::on(faces0, 0.5f);
+#if 1
     //480x270
     cv::GMat in1 = cv::gapi::resize(in0, cv::Size(480, 270));
     cv::GMat regressions1, scores1;
@@ -328,8 +328,8 @@ int main(int argc, char *argv[])
     cv::GArray<custom::Face> faces5 = custom::BuildFaces::on(regressions5, scores5, currentScale, tmcnnp_conf_thresh);
     nms_p_faces = custom::RunNMS::on(faces5, 0.5f);
 #endif
-    //cv::GComputation graph_mtcnn(cv::GIn(in_original), cv::GOut(cv::gapi::copy(in_original), nms_p_faces));
-    cv::GComputation graph_mtcnn(cv::GIn(in_original), cv::GOut(cv::gapi::copy(in_original), faces0));
+    cv::GComputation graph_mtcnn(cv::GIn(in_original), cv::GOut(cv::gapi::copy(in_original), nms_p_faces));
+    //cv::GComputation graph_mtcnn(cv::GIn(in_original), cv::GOut(cv::gapi::copy(in_original), faces0));
 #else
     //Proposal part of graph
     //960x540
