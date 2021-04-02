@@ -269,8 +269,23 @@ void bbox(cv::Mat& m, const cv::Rect& rc) {
 } // anonymous namespace
 } // namespace vis
 
-int main(int argc, char *argv[])
+const float P_NET_WINDOW_SIZE = 12.f;int main(int argc, char *argv[])
 {
+#if 1
+    int width = 1920;
+    int height = 1080;
+    float maxFaceSize = static_cast<float>(std::min(height, width));
+    float minFaceSize = 20.0f;
+    float faceSize = minFaceSize;
+    float scaleFactor = 0.709;
+    while (faceSize <= maxFaceSize) {
+        float currentScale = (P_NET_WINDOW_SIZE) / faceSize;
+        int imgHeight = std::ceil(height * currentScale);
+        int imgWidth = std::ceil(width * currentScale);
+        std::cout << imgWidth << " x " << imgHeight << "   currentScale = " << currentScale << std::endl;
+        faceSize /= scaleFactor;
+    }
+#endif
     cv::CommandLineParser cmd(argc, argv, keys);
     cmd.about(about);
     if (cmd.has("help")) {
@@ -413,9 +428,9 @@ int main(int argc, char *argv[])
 #if 1
     std::vector<custom::Face> out_faces;
 
-    std::cout << "PULL!!!" << std::endl;
-    pipeline_mtcnn.pull(cv::gout(image, out_faces));
-    std::cout << "PULL EXIT!!! faces number " << out_faces.size() << std::endl;
+    //std::cout << "PULL!!!" << std::endl;
+    //pipeline_mtcnn.pull(cv::gout(image, out_faces));
+    //std::cout << "PULL EXIT!!! faces number " << out_faces.size() << std::endl;
 
     tm.start();
     int frames = 0;
