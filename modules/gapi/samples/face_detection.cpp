@@ -257,6 +257,24 @@ G_API_OP(MergePyramidOutputs,
     }
 };
 
+G_API_OP(ApplyRegression,
+    <GFaces(GFaces, bool)>,
+    "sample.custom.mtcnn.apply_regression") {
+    static cv::GArrayDesc outMeta(const cv::GArrayDesc&,
+        bool) {
+        return cv::empty_array_desc();
+    }
+};
+
+G_API_OP(BBoxesToSquares,
+    <GFaces(GFaces)>,
+    "sample.custom.mtcnn.bboxes_to_squares") {
+    static cv::GArrayDesc outMeta(const cv::GArrayDesc&
+    ) {
+        return cv::empty_array_desc();
+    }
+};
+
 
 GAPI_OCV_KERNEL(OCVBuildFaces, BuildFaces) {
     static void run(const cv::Mat & in_scores,
@@ -319,7 +337,19 @@ GAPI_OCV_KERNEL(OCVMergePyramidOutputs, MergePyramidOutputs) {
             out_faces.insert(out_faces.end(), in_faces5.begin(), in_faces5.end());
         }
     }
-};// GAPI_OCV_KERNEL(RunNMSAccum)
+};// GAPI_OCV_KERNEL(MergePyramidOutputs)
+
+GAPI_OCV_KERNEL(OCVBBoxesToSquares, BBoxesToSquares) {
+    static void run(const std::vector<Face> &in_faces,
+        std::vector<Face> &out_faces) {
+        std::vector<Face> in_faces_copy = in_faces;
+        Face::bboxes2Squares(in_faces_copy);
+        out_faces.clear();
+        if (!in_faces_copy.empty()) {
+            out_faces.insert(out_faces.end(), in_faces_copy.begin(), in_faces_copy.end());
+        }
+    }
+};// GAPI_OCV_KERNEL(RunNMS)
 
 } // anonymous namespace
 } // namespace custom
@@ -408,8 +438,11 @@ const float P_NET_WINDOW_SIZE = 12.f;int main(int argc, char *argv[])
     cv::GArray<custom::Face> faces5 = custom::BuildFaces::on(scores5, regressions5, currentScale, tmcnnp_conf_thresh);
     cv::GArray<custom::Face> nms_p_faces5 = custom::RunNMS::on(faces5, 0.5f);
     cv::GArray<custom::Face> nms_p_faces_total = custom::MergePyramidOutputs::on(nms_p_faces0, nms_p_faces1, nms_p_faces2, nms_p_faces3, nms_p_faces4, nms_p_faces5);
-    //cv::GComputation graph_mtcnn(cv::GIn(in_original), cv::GOut(cv::gapi::copy(in_original), nms_p_faces0, nms_p_faces1, nms_p_faces2, nms_p_faces3, nms_p_faces4, nms_p_faces5));
-    cv::GComputation graph_mtcnn(cv::GIn(in_original), cv::GOut(cv::gapi::copy(in_original), nms_p_faces_total));
+    //Proposal post-processing
+    cv::GArray<custom::Face> nms07_p_faces_total = custom::RunNMS::on(nms_p_faces_total, 0.7f);
+    cv::GArray<custom::Face> final_faces_for_bb2squares = custom::ApplyRegression::on(nms07_p_faces_total, false);
+    cv::GArray<custom::Face> final_faces = custom::BBoxesToSquares::on(final_faces_for_bb2squares);
+    cv::GComputation graph_mtcnn(cv::GIn(in_original), cv::GOut(cv::gapi::copy(in_original), final_faces));
 
     // MTCNN Proposal detection network
     auto mtcnnp_net = cv::gapi::ie::Params<custom::MTCNNProposal>{
