@@ -339,6 +339,20 @@ GAPI_OCV_KERNEL(OCVMergePyramidOutputs, MergePyramidOutputs) {
     }
 };// GAPI_OCV_KERNEL(MergePyramidOutputs)
 
+GAPI_OCV_KERNEL(OCVApplyRegression, ApplyRegression) {
+    static void run(const std::vector<Face> &in_faces,
+        bool addOne,
+        std::vector<Face> &out_faces) {
+        std::vector<Face> in_faces_copy = in_faces;
+        Face::applyRegression(in_faces_copy, addOne);
+        out_faces.clear();
+        if (!in_faces_copy.empty()) {
+            out_faces.insert(out_faces.end(), in_faces_copy.begin(), in_faces_copy.end());
+        }
+    }
+};// GAPI_OCV_KERNEL(ApplyRegression)
+
+
 GAPI_OCV_KERNEL(OCVBBoxesToSquares, BBoxesToSquares) {
     static void run(const std::vector<Face> &in_faces,
         std::vector<Face> &out_faces) {
@@ -349,7 +363,7 @@ GAPI_OCV_KERNEL(OCVBBoxesToSquares, BBoxesToSquares) {
             out_faces.insert(out_faces.end(), in_faces_copy.begin(), in_faces_copy.end());
         }
     }
-};// GAPI_OCV_KERNEL(RunNMS)
+};// GAPI_OCV_KERNEL(BBoxesToSquares)
 
 } // anonymous namespace
 } // namespace custom
@@ -458,6 +472,8 @@ const float P_NET_WINDOW_SIZE = 12.f;int main(int argc, char *argv[])
         , custom::OCVRunNMS
         , custom::OCVRunNMSAccum
         , custom::OCVMergePyramidOutputs
+        , custom::OCVApplyRegression
+        , custom::OCVBBoxesToSquares
     >();
     auto pipeline_mtcnn = graph_mtcnn.compileStreaming(cv::compile_args(networks_mtcnn, kernels_mtcnn));
 
