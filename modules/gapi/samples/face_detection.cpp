@@ -498,9 +498,9 @@ int main(int argc, char *argv[])
     //Proposal part of graph
     //960x540
     cv::GMat in_original;
-    cv::GMat in_originalRGB = cv::gapi::BGR2RGB(in_original);
-    //cv::GMat in0 = cv::gapi::resize(in_original, cv::Size(960, 540));
-    cv::GMat in0 = cv::gapi::resize(in_originalRGB, cv::Size(960, 540));
+    //cv::GMat in_originalRGB = cv::gapi::BGR2RGB(in_original);
+    cv::GMat in0 = cv::gapi::resize(in_original, cv::Size(960, 540));
+    //cv::GMat in0 = cv::gapi::resize(in_originalRGB, cv::Size(960, 540));
     cv::GMat regressions0, scores0;
     std::tie(regressions0, scores0) = cv::gapi::infer<custom::MTCNNProposal>(in0);
     float currentScale = 0.5f;
@@ -548,10 +548,10 @@ int main(int argc, char *argv[])
     cv::GArray<custom::Face> final_faces_pnet = custom::BBoxesToSquares::on(final_p_faces_for_bb2squares);
 
     //Refinement part of graph
-    cv::GArray<cv::GMat> crops = custom::RNetPreProc::on(in_originalRGB, final_faces_pnet);
+    cv::GArray<cv::GMat> crops = custom::RNetPreProc::on(in_original, final_faces_pnet);
     //cv::GMat regressionsRNet, scoresRNet;
     cv::GArray<cv::GMat> regressionsRNet, scoresRNet;
-    std::tie(regressionsRNet, scoresRNet) = cv::gapi::infer2<custom::MTCNNRefinement>(in_originalRGB, crops);
+    std::tie(regressionsRNet, scoresRNet) = cv::gapi::infer2<custom::MTCNNRefinement>(in_original, crops);
     //std::tie(regressionsRNet, scoresRNet) = cv::gapi::infer<custom::MTCNNRefinement>( crops, in_originalRGB);
 
     //Refinement post-processing
@@ -569,15 +569,16 @@ int main(int argc, char *argv[])
         tmcnnp_model_path,                // path to topology IR
         weights_path(tmcnnp_model_path),  // path to weights
         tmcnnp_target_dev,                // device specifier
-    }.cfgOutputLayers({ "conv4-2", "prob1" });
+    }.cfgOutputLayers({ "conv4-2", "prob1" })
+    .cfgInputLayers({ "data" });
 
     // MTCNN Refinement detection network
     auto mtcnnr_net = cv::gapi::ie::Params<custom::MTCNNRefinement>{
         tmcnnr_model_path,                // path to topology IR
         weights_path(tmcnnr_model_path),  // path to weights
         tmcnnr_target_dev,                // device specifier
-    }.cfgOutputLayers({ "conv5-2", "prob1" });
-
+    }.cfgOutputLayers({ "conv5-2", "prob1" })
+    .cfgInputLayers({ "data" });
 
     auto networks_mtcnn = cv::gapi::networks(mtcnnp_net, mtcnnr_net);
 
