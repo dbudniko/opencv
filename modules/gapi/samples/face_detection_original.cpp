@@ -258,9 +258,16 @@ G_API_OP(RunNMS,
 };
 
 G_API_OP(MergePyramidOutputs,
-    <GFaces(GFaces, GFaces, GFaces, GFaces, GFaces, GFaces)>,
+    <GFaces(GFaces, GFaces, GFaces, GFaces, GFaces, GFaces,
+            GFaces, GFaces, GFaces, GFaces, GFaces, GFaces)>,
     "sample.custom.mtcnn.merge_pyramid_outputs") {
     static cv::GArrayDesc outMeta(const cv::GArrayDesc&,
+                                  const cv::GArrayDesc&,
+                                  const cv::GArrayDesc&,
+                                  const cv::GArrayDesc&,
+                                  const cv::GArrayDesc&,
+                                  const cv::GArrayDesc&,
+                                  const cv::GArrayDesc&,
                                   const cv::GArrayDesc&,
                                   const cv::GArrayDesc&,
                                   const cv::GArrayDesc&,
@@ -384,6 +391,12 @@ GAPI_OCV_KERNEL(OCVMergePyramidOutputs, MergePyramidOutputs) {
                     const std::vector<Face> &in_faces3,
                     const std::vector<Face> &in_faces4,
                     const std::vector<Face> &in_faces5,
+                    const std::vector<Face> &in_faces6,
+                    const std::vector<Face> &in_faces7,
+                    const std::vector<Face> &in_faces8,
+                    const std::vector<Face> &in_faces9,
+                    const std::vector<Face> &in_faces10,
+                    const std::vector<Face> &in_faces11,
                     std::vector<Face> &out_faces) {
         if (!in_faces0.empty()) {
             out_faces.insert(out_faces.end(), in_faces0.begin(), in_faces0.end());
@@ -402,6 +415,24 @@ GAPI_OCV_KERNEL(OCVMergePyramidOutputs, MergePyramidOutputs) {
         }
         if (!in_faces5.empty()) {
             out_faces.insert(out_faces.end(), in_faces5.begin(), in_faces5.end());
+        }
+        if (!in_faces6.empty()) {
+            out_faces.insert(out_faces.end(), in_faces6.begin(), in_faces6.end());
+        }
+        if (!in_faces7.empty()) {
+            out_faces.insert(out_faces.end(), in_faces7.begin(), in_faces7.end());
+        }
+        if (!in_faces8.empty()) {
+            out_faces.insert(out_faces.end(), in_faces8.begin(), in_faces8.end());
+        }
+        if (!in_faces9.empty()) {
+            out_faces.insert(out_faces.end(), in_faces9.begin(), in_faces9.end());
+        }
+        if (!in_faces10.empty()) {
+            out_faces.insert(out_faces.end(), in_faces10.begin(), in_faces10.end());
+        }
+        if (!in_faces11.empty()) {
+            out_faces.insert(out_faces.end(), in_faces11.begin(), in_faces11.end());
         }
     }
 };// GAPI_OCV_KERNEL(MergePyramidOutputs)
@@ -600,52 +631,99 @@ int main(int argc, char *argv[])
     const auto tmcnnr_conf_thresh = cmd.get<double>("thrr");
 
     //Proposal part of graph
-    //960x540
+    //1152x648
     cv::GMat in_original;
     //cv::GMat in_originalRGB = cv::gapi::BGR2RGB(in_original);
-    cv::GMat in0 = cv::gapi::resize(in_original, cv::Size(960, 540));
+    cv::GMat in0 = cv::gapi::resize(in_original, cv::Size(1152, 648));
     //cv::GMat in0 = cv::gapi::resize(in_originalRGB, cv::Size(960, 540));
     cv::GMat regressions0, scores0;
     std::tie(regressions0, scores0) = cv::gapi::infer<custom::MTCNNProposal>(in0);
-    float currentScale = 0.5f;
+    float currentScale = 0.6f;
     cv::GArray<custom::Face> faces0 = custom::BuildFaces::on(scores0, regressions0, currentScale, tmcnnp_conf_thresh);
     cv::GArray<custom::Face> nms_p_faces0 = custom::RunNMS::on(faces0, 0.5f);
-    //480x270
-    cv::GMat in1 = cv::gapi::resize(in0, cv::Size(480, 270));
+    //817x460
+    cv::GMat in1 = cv::gapi::resize(in0, cv::Size(817, 460));
     cv::GMat regressions1, scores1;
     std::tie(regressions1, scores1) = cv::gapi::infer<custom::MTCNNProposal>(in1);
-    currentScale = currentScale / 2.0f;
+    currentScale = 0.4254f;
     cv::GArray<custom::Face> faces1 = custom::BuildFaces::on(scores1, regressions1, currentScale, tmcnnp_conf_thresh);
     cv::GArray<custom::Face> nms_p_faces1 = custom::RunNMS::on(faces1, 0.5f);
-    //240x135
-    cv::GMat in2 = cv::gapi::resize(in1, cv::Size(240, 135));
+    //580x326
+    cv::GMat in2 = cv::gapi::resize(in1, cv::Size(580, 326));
     cv::GMat regressions2, scores2;
     std::tie(regressions2, scores2) = cv::gapi::infer<custom::MTCNNProposal>(in2);
-    currentScale = currentScale / 2.0f;
+    currentScale = 0.301609f;
     cv::GArray<custom::Face> faces2 = custom::BuildFaces::on(scores2, regressions2, currentScale, tmcnnp_conf_thresh);
     cv::GArray<custom::Face> nms_p_faces2 = custom::RunNMS::on(faces2, 0.5f);
-    //120x67
-    cv::GMat in3 = cv::gapi::resize(in2, cv::Size(120, 67));
+    //411x231 
+    cv::GMat in3 = cv::gapi::resize(in2, cv::Size(411x231));
     cv::GMat regressions3, scores3;
     std::tie(regressions3, scores3) = cv::gapi::infer<custom::MTCNNProposal>(in3);
-    currentScale = currentScale / 2.0f;
+    currentScale = 0.21384f;
     cv::GArray<custom::Face> faces3 = custom::BuildFaces::on(scores3, regressions3, currentScale, tmcnnp_conf_thresh);
     cv::GArray<custom::Face> nms_p_faces3 = custom::RunNMS::on(faces3, 0.5f);
-    //60x33
-    cv::GMat in4 = cv::gapi::resize(in3, cv::Size(60, 33));
+    //292x164 
+    cv::GMat in4 = cv::gapi::resize(in3, cv::Size(292, 164));
     cv::GMat regressions4, scores4;
     std::tie(regressions4, scores4) = cv::gapi::infer<custom::MTCNNProposal>(in4);
-    currentScale = currentScale / 2.0f;
+    currentScale = 0.151613f;
     cv::GArray<custom::Face> faces4 = custom::BuildFaces::on(scores4, regressions4, currentScale, tmcnnp_conf_thresh);
     cv::GArray<custom::Face> nms_p_faces4 = custom::RunNMS::on(faces4, 0.5f);
-    //30x16
-    cv::GMat in5 = cv::gapi::resize(in4, cv::Size(30, 16));
+    //207x117
+    cv::GMat in5 = cv::gapi::resize(in4, cv::Size(207, 117));
     cv::GMat regressions5, scores5;
     std::tie(regressions5, scores5) = cv::gapi::infer<custom::MTCNNProposal>(in5);
-    currentScale = currentScale / 2.0f;
+    currentScale = 0.107494f;
     cv::GArray<custom::Face> faces5 = custom::BuildFaces::on(scores5, regressions5, currentScale, tmcnnp_conf_thresh);
     cv::GArray<custom::Face> nms_p_faces5 = custom::RunNMS::on(faces5, 0.5f);
-    cv::GArray<custom::Face> nms_p_faces_total = custom::MergePyramidOutputs::on(nms_p_faces0, nms_p_faces1, nms_p_faces2, nms_p_faces3, nms_p_faces4, nms_p_faces5);
+    //147x83
+    cv::GMat in6 = cv::gapi::resize(in5, cv::Size(147, 83));
+    cv::GMat regressions6, scores6;
+    std::tie(regressions6, scores6) = cv::gapi::infer<custom::MTCNNProposal>(in6);
+    currentScale = 0.0762129f;
+    cv::GArray<custom::Face> faces6 = custom::BuildFaces::on(scores6, regressions6, currentScale, tmcnnp_conf_thresh);
+    cv::GArray<custom::Face> nms_p_faces6 = custom::RunNMS::on(faces6, 0.5f);
+    //104x59
+    cv::GMat in7 = cv::gapi::resize(in6, cv::Size(104, 59));
+    cv::GMat regressions7, scores7;
+    std::tie(regressions7, scores7) = cv::gapi::infer<custom::MTCNNProposal>(in7);
+    currentScale = 0.054035f;
+    cv::GArray<custom::Face> faces7 = custom::BuildFaces::on(scores7, regressions7, currentScale, tmcnnp_conf_thresh);
+    cv::GArray<custom::Face> nms_p_faces7 = custom::RunNMS::on(faces7, 0.5f);
+    //74x42
+    cv::GMat in8 = cv::gapi::resize(in7, cv::Size(74, 42));
+    cv::GMat regressions8, scores8;
+    std::tie(regressions8, scores8) = cv::gapi::infer<custom::MTCNNProposal>(in8);
+    currentScale = 0.0383108f;
+    cv::GArray<custom::Face> faces8 = custom::BuildFaces::on(scores8, regressions8, currentScale, tmcnnp_conf_thresh);
+    cv::GArray<custom::Face> nms_p_faces8 = custom::RunNMS::on(faces8, 0.5f);
+    //53x30
+    cv::GMat in9 = cv::gapi::resize(in8, cv::Size(53, 30));
+    cv::GMat regressions9, scores9;
+    std::tie(regressions9, scores9) = cv::gapi::infer<custom::MTCNNProposal>(in9);
+    currentScale = 0.0271623f;
+    cv::GArray<custom::Face> faces9 = custom::BuildFaces::on(scores9, regressions9, currentScale, tmcnnp_conf_thresh);
+    cv::GArray<custom::Face> nms_p_faces9 = custom::RunNMS::on(faces9, 0.5f);
+    //37x21
+    cv::GMat in10 = cv::gapi::resize(in9, cv::Size(37, 21));
+    cv::GMat regressions10, scores10;
+    std::tie(regressions10, scores10) = cv::gapi::infer<custom::MTCNNProposal>(in10);
+    currentScale = 0.0192581f;
+    cv::GArray<custom::Face> faces10 = custom::BuildFaces::on(scores10, regressions10, currentScale, tmcnnp_conf_thresh);
+    cv::GArray<custom::Face> nms_p_faces10 = custom::RunNMS::on(faces10, 0.5f);
+    //27x15
+    cv::GMat in11 = cv::gapi::resize(in10, cv::Size(27, 15));
+    cv::GMat regressions11, scores11;
+    std::tie(regressions11, scores11) = cv::gapi::infer<custom::MTCNNProposal>(in11);
+    currentScale = 0.013654f;
+    cv::GArray<custom::Face> faces11 = custom::BuildFaces::on(scores11, regressions11, currentScale, tmcnnp_conf_thresh);
+    cv::GArray<custom::Face> nms_p_faces11 = custom::RunNMS::on(faces11, 0.5f);
+
+
+    cv::GArray<custom::Face> nms_p_faces_total = custom::MergePyramidOutputs::on(nms_p_faces0, nms_p_faces1, nms_p_faces2,
+                                                                                 nms_p_faces3, nms_p_faces4, nms_p_faces5,
+                                                                                 nms_p_faces6, nms_p_faces7, nms_p_faces8,
+                                                                                 nms_p_faces9, nms_p_faces10, nms_p_faces11);
     //Proposal post-processing
     cv::GArray<custom::Face> nms07_p_faces_total = custom::RunNMS::on(nms_p_faces_total, 0.7f);
     cv::GArray<custom::Face> final_p_faces_for_bb2squares = custom::ApplyRegression::on(nms07_p_faces_total, false);
