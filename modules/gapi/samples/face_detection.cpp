@@ -503,8 +503,8 @@ GAPI_OCV_KERNEL(OCVRNetPreProcGetROIs, RNetPreProcGetROIs) {
         //std::vector<Face> in_faces_copy = in_faces;
         for (auto& f : in_faces) {
             cv::Rect tmp_rect = f.bbox.getRect();
-            if (tmp_rect.x + tmp_rect.width >= 1920) tmp_rect.width = 1920 - tmp_rect.x;
-            if (tmp_rect.y + tmp_rect.height >= 1080) tmp_rect.height = 1080 - tmp_rect.y;
+            if (tmp_rect.x + tmp_rect.width >= 1920) tmp_rect.width = 1920 - tmp_rect.x - 4;
+            if (tmp_rect.y + tmp_rect.height >= 1080) tmp_rect.height = 1080 - tmp_rect.y - 4;
             outs.push_back(tmp_rect);
             //outs.push_back(f.bbox.getRect());
         }
@@ -744,12 +744,12 @@ int main(int argc, char *argv[])
 
 
     // MTCNN Refinement detection network
+    std::vector<size_t> reshape_dims_24x24 = { 1, 3, 24, 24 };
     auto mtcnnr_net = cv::gapi::ie::Params<custom::MTCNNRefinement>{
         tmcnnr_model_path,                // path to topology IR
         weights_path(tmcnnr_model_path),  // path to weights
         tmcnnr_target_dev,                // device specifier
-    }.cfgOutputLayers({ "conv5-2", "prob1" })
-    .cfgInputLayers({ "data" });
+    }.cfgOutputLayers({ "conv5-2", "prob1" }).cfgInputReshape({ {"data", reshape_dims_24x24} });
 
     auto networks_mtcnn = cv::gapi::networks(mtcnnp_net
                                              , mtcnnp_net_960x540
