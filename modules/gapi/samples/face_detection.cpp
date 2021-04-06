@@ -502,8 +502,11 @@ GAPI_OCV_KERNEL(OCVRNetPreProcGetROIs, RNetPreProcGetROIs) {
         outs.clear();
         //std::vector<Face> in_faces_copy = in_faces;
         for (auto& f : in_faces) {
-            //cv::Rect tmp_rect = f.bbox.getRect();
-            outs.push_back(f.bbox.getRect());
+            cv::Rect tmp_rect = f.bbox.getRect();
+            if (tmp_rect.x + tmp_rect.width >= 1920) tmp_rect.width = 1920 - tmp_rect.x;
+            if (tmp_rect.y + tmp_rect.height >= 1080) tmp_rect.height = 1080 - tmp_rect.y;
+            outs.push_back(tmp_rect);
+            //outs.push_back(f.bbox.getRect());
         }
     }
 };// GAPI_OCV_KERNEL(RNetPreProcGetROIs)
