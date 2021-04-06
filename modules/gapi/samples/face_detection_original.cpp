@@ -656,7 +656,7 @@ int main(int argc, char *argv[])
     cv::GArray<custom::Face> faces2 = custom::BuildFaces::on(scores2, regressions2, currentScale, tmcnnp_conf_thresh);
     cv::GArray<custom::Face> nms_p_faces2 = custom::RunNMS::on(faces2, 0.5f);
     //411x231 
-    cv::GMat in3 = cv::gapi::resize(in2, cv::Size(411x231));
+    cv::GMat in3 = cv::gapi::resize(in2, cv::Size(411, 231));
     cv::GMat regressions3, scores3;
     std::tie(regressions3, scores3) = cv::gapi::infer<custom::MTCNNProposal>(in3);
     currentScale = 0.21384f;
