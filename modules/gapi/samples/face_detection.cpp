@@ -640,7 +640,7 @@ int main(int argc, char *argv[])
     //Output post-processing
     cv::GArray<custom::Face> onet_post_proc_faces = custom::ONetPostProc::on(final_faces_rnet, scoresONet, regressionsONet, landmarksONet, tmcnno_conf_thresh);
     cv::GArray<custom::Face> final_o_faces_for_nms07 = custom::ApplyRegression::on(onet_post_proc_faces, true);
-    cv::GArray<custom::Face> nms07_o_faces_total = custom::RunNMS::on(rnet_post_proc_faces, 0.7f, true);
+    cv::GArray<custom::Face> nms07_o_faces_total = custom::RunNMS::on(final_o_faces_for_nms07, 0.7f, true);
     cv::GArray<custom::Face> final_faces_onet = custom::SwapFaces::on(nms07_o_faces_total);
 
     cv::GComputation graph_mtcnn(cv::GIn(in_original), cv::GOut(cv::gapi::copy(in_original), final_faces_onet));
