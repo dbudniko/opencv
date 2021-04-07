@@ -436,6 +436,7 @@ GAPI_OCV_KERNEL(OCVBBoxesToSquares, BBoxesToSquares) {
         if (!in_faces_copy.empty()) {
             out_faces.insert(out_faces.end(), in_faces_copy.begin(), in_faces_copy.end());
         }
+        std::cout << "OCVBBoxesToSquares!!! input faces number " << in_faces.size() << " output faces number " << out_faces.size() << std::endl;
     }
 };// GAPI_OCV_KERNEL(BBoxesToSquares)
 
