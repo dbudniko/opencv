@@ -668,6 +668,7 @@ int main(int argc, char *argv[])
     int frames = 0;
     while (pipeline_mtcnn.pull(cv::gout(image, out_faces))) {
         frames++;
+        std::cout << "Final Faces Size " << out_faces.size() << std::endl;
         // Visualize results on the frame
         for (auto&& rc : out_faces) vis::bbox(image, rc.bbox.getRect());
         tm.stop();
