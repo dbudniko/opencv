@@ -520,7 +520,7 @@ GAPI_OCV_KERNEL(OCVRNetPostProc2, RNetPostProc2) {
         float threshold,
         std::vector<Face> &out_faces) {
         out_faces.clear();
-        std::cout << "OCVRNetPostProc2!!! input scores number " << in_scores.size() << " output regressions number " << in_regresssions.size() << std::endl;
+        std::cout << "OCVRNetPostProc2!!! input scores number " << in_scores.size() << " output regressions number " << in_regresssions.size() << " input faces size " << in_faces.size() << std::endl;
         for (unsigned int k = 0; k < in_faces.size(); ++k) {
             const float* scores_data = (float*)in_scores[k].data;
             const float* reg_data = (float*)in_regresssions[k].data;
@@ -533,7 +533,7 @@ GAPI_OCV_KERNEL(OCVRNetPostProc2, RNetPostProc2) {
                 out_faces.push_back(info);
             }
         }
-        std::cout << "OCVRNetPostProc2!!! out faces number " << out_faces.size() << std::endl;
+        std::cout << "OCVRNetPostProc2!!! out faces number " << out_faces.size() << " for threshold " << threshold << std::endl;
     }
 };// GAPI_OCV_KERNEL(RNetPostProc2)
 
@@ -623,7 +623,7 @@ int main(int argc, char *argv[])
     std::tie(regressionsRNet, scoresRNet) = cv::gapi::infer<custom::MTCNNRefinement>(faces_roi, in_original);
 
     //Refinement post-processing
-    cv::GArray<custom::Face> rnet_post_proc_faces = custom::RNetPostProc2::on(final_faces_pnet, regressionsRNet, scoresRNet, tmcnnr_conf_thresh);
+    cv::GArray<custom::Face> rnet_post_proc_faces = custom::RNetPostProc2::on(final_faces_pnet, scoresRNet, regressionsRNet, tmcnnr_conf_thresh);
     cv::GArray<custom::Face> nms07_r_faces_total = custom::RunNMS::on(rnet_post_proc_faces, 0.7f);
     cv::GArray<custom::Face> final_r_faces_for_bb2squares = custom::ApplyRegression::on(nms07_r_faces_total, true);
     cv::GArray<custom::Face> final_faces_rnet = custom::BBoxesToSquares::on(final_r_faces_for_bb2squares);
