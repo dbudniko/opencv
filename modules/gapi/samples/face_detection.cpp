@@ -496,6 +496,7 @@ GAPI_OCV_KERNEL(OCVONetPostProc, ONetPostProc) {
             const float* scores_data = (float*)in_scores[k].data;
             const float* reg_data = (float*)in_regresssions[k].data;
             const float* landmark_data = (float*)in_landmarks[k].data;
+            std::cout << "OCVONetPostProc!!! scores_data[0] " << scores_data[0] << " scores_data[1] " << scores_data[1] << std::endl;
             if (scores_data[1] >= threshold) {
                 Face info = in_faces[k];
                 info.score = scores_data[1];
