@@ -410,6 +410,7 @@ GAPI_OCV_KERNEL(OCVMergePyramidOutputs, MergePyramidOutputs) {
         if (!in_faces5.empty()) {
             out_faces.insert(out_faces.end(), in_faces5.begin(), in_faces5.end());
         }
+        std::cout << "OCVMergePyramidOutputs!!! output faces number " << out_faces.size() << std::endl;
     }
 };// GAPI_OCV_KERNEL(MergePyramidOutputs)
 
