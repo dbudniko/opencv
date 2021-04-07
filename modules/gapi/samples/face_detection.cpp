@@ -203,6 +203,7 @@ std::vector<Face> buildFaces(const cv::Mat& scores,
 
 // Define networks for this sample
 using GMat2 = std::tuple<cv::GMat, cv::GMat>;
+using GMat3 = std::tuple<cv::GMat, cv::GMat, cv::GMat>;
 using GMats = cv::GArray<cv::GMat>;
 using GRects = cv::GArray<cv::Rect>;
 
@@ -237,7 +238,7 @@ G_API_NET(MTCNNRefinement,
 
 
 G_API_NET(MTCNNOutput,
-          <cv::GMat(cv::GMat, cv::GMat)>,
+          <GMat3(cv::GMat)>,
           "sample.custom.mtcnn_output");
 
 using GFaces = cv::GArray<Face>;
@@ -262,10 +263,10 @@ G_API_OP(RunNMSAccum,
 };
 
 G_API_OP(RunNMS,
-    <GFaces(GFaces, float)>,
+    <GFaces(GFaces, float, bool)>,
     "sample.custom.mtcnn.run_nms") {
     static cv::GArrayDesc outMeta(const cv::GArrayDesc&,
-        float) {
+        float, bool) {
         return cv::empty_array_desc();
     }
 };
@@ -302,9 +303,9 @@ G_API_OP(BBoxesToSquares,
     }
 };
 
-G_API_OP(RNetPreProcGetROIs,
+G_API_OP(R_O_NetPreProcGetROIs,
     <GRects(GFaces)>,
-    "sample.custom.mtcnn.bboxes_rnet_preproc_get_rois") {
+    "sample.custom.mtcnn.bboxes_r_o_net_preproc_get_rois") {
     static cv::GArrayDesc outMeta(const cv::GArrayDesc&
     ) {
         return cv::empty_array_desc();
@@ -323,6 +324,30 @@ G_API_OP(RNetPostProc,
         return cv::empty_array_desc();
     }
 };
+
+G_API_OP(ONetPostProc,
+    <GFaces(GFaces, GMats, GMats, GMats, float)>,
+    "sample.custom.mtcnn.onet_postproc") {
+    static cv::GArrayDesc outMeta(const cv::GArrayDesc&,
+        const cv::GArrayDesc&,
+        const cv::GArrayDesc&,
+        const cv::GArrayDesc&,
+        float
+    ) {
+        return cv::empty_array_desc();
+    }
+};
+
+G_API_OP(SwapFaces,
+    <GFaces(GFaces)>,
+    "sample.custom.mtcnn.swap_faces") {
+    static cv::GArrayDesc outMeta(const cv::GArrayDesc&
+    ) {
+        return cv::empty_array_desc();
+    }
+};
+
+//Custom kernels implementation
 
 GAPI_OCV_KERNEL(OCVBuildFaces, BuildFaces) {
     static void run(const cv::Mat & in_scores,
@@ -351,9 +376,10 @@ GAPI_OCV_KERNEL(OCVRunNMSAccum, RunNMSAccum) {
 GAPI_OCV_KERNEL(OCVRunNMS, RunNMS) {
     static void run(const std::vector<Face> &in_faces,
         float threshold,
+        bool useMin,
         std::vector<Face> &out_faces) {
         std::vector<Face> in_faces_copy = in_faces;
-        out_faces = Face::runNMS(in_faces_copy, threshold);
+        out_faces = Face::runNMS(in_faces_copy, threshold, useMin);
     }
 };// GAPI_OCV_KERNEL(RunNMS)
 
@@ -413,36 +439,11 @@ GAPI_OCV_KERNEL(OCVBBoxesToSquares, BBoxesToSquares) {
     }
 };// GAPI_OCV_KERNEL(BBoxesToSquares)
 
-const int INPUT_DATA_WIDTH = 24;
-const int INPUT_DATA_HEIGHT = 24;
-inline cv::Mat cropImage(const cv::Mat& img, cv::Rect r) {
-    cv::Mat m = cv::Mat::zeros(r.height, r.width, img.type());
-    int dx = std::abs(std::min(0, r.x));
-    if (dx > 0) {
-        r.x = 0;
-    }
-    r.width -= dx;
-    int dy = std::abs(std::min(0, r.y));
-    if (dy > 0) {
-        r.y = 0;
-    }
-    r.height -= dy;
-    int dw = std::abs(std::min(0, img.cols - 1 - (r.x + r.width)));
-    r.width -= dw;
-    int dh = std::abs(std::min(0, img.rows - 1 - (r.y + r.height)));
-    r.height -= dh;
-    if (r.width > 0 && r.height > 0) {
-        img(r).copyTo(m(cv::Range(dy, dy + r.height), cv::Range(dx, dx + r.width)));
-    }
-    return m;
-}
 
-GAPI_OCV_KERNEL(OCVRNetPreProcGetROIs, RNetPreProcGetROIs) {
+GAPI_OCV_KERNEL(OCVR_O_NetPreProcGetROIs, R_O_NetPreProcGetROIs) {
     static void run(const std::vector<Face> &in_faces,
         std::vector<cv::Rect> &outs) {
-        //cv::Size windowSize = cv::Size(INPUT_DATA_WIDTH, INPUT_DATA_HEIGHT);
         outs.clear();
-        //std::vector<Face> in_faces_copy = in_faces;
         for (auto& f : in_faces) {
             cv::Rect tmp_rect = f.bbox.getRect();
             if (tmp_rect.x + tmp_rect.width >= 1920) tmp_rect.width = 1920 - tmp_rect.x - 4;
@@ -450,9 +451,9 @@ GAPI_OCV_KERNEL(OCVRNetPreProcGetROIs, RNetPreProcGetROIs) {
             outs.push_back(tmp_rect);
             //outs.push_back(f.bbox.getRect());
         }
-        std::cout << "OCVRNetPreProcGetROIs!!! input faces number " << in_faces.size() <<  " output faces number " << outs.size() << std::endl;
+        std::cout << "OCVR_O_NetPreProcGetROIs!!! input faces number " << in_faces.size() <<  " output faces number " << outs.size() << std::endl;
     }
-};// GAPI_OCV_KERNEL(RNetPreProcGetROIs)
+};// GAPI_OCV_KERNEL(R_O_NetPreProcGetROIs)
 
 
 GAPI_OCV_KERNEL(OCVRNetPostProc, RNetPostProc) {
@@ -478,6 +479,62 @@ GAPI_OCV_KERNEL(OCVRNetPostProc, RNetPostProc) {
         std::cout << "OCVRNetPostProc!!! out faces number " << out_faces.size() << " for threshold " << threshold << std::endl;
     }
 };// GAPI_OCV_KERNEL(RNetPostProc)
+
+GAPI_OCV_KERNEL(OCVONetPostProc, ONetPostProc) {
+    static void run(const std::vector<Face> &in_faces,
+        const std::vector<cv::Mat> &in_scores,
+        const std::vector<cv::Mat> &in_regresssions,
+        const std::vector<cv::Mat> &in_landmarks,
+        float threshold,
+        std::vector<Face> &out_faces) {
+        out_faces.clear();
+        std::cout << "OCVONetPostProc!!! input scores number " << in_scores.size() <<
+                     " input regressions number " <<  in_regresssions.size() <<
+                     " input landmarks number " << in_landmarks.size() <<
+                     " input faces size " << in_faces.size() << std::endl;
+        for (unsigned int k = 0; k < in_faces.size(); ++k) {
+            const float* scores_data = (float*)in_scores[k].data;
+            const float* reg_data = (float*)in_regresssions[k].data;
+            const float* landmark_data = (float*)in_landmarks[k].data;
+            if (scores_data[1] >= threshold) {
+                Face info = in_faces[k];
+                info.score = scores_data[1];
+                for (int i = 0; i < 4; ++i) {
+                    info.regression[i] = reg_data[i];
+                }
+                float w = info.bbox.x2 - info.bbox.x1 + 1.f;
+                float h = info.bbox.y2 - info.bbox.y1 + 1.f;
+
+                for (int p = 0; p < NUM_PTS; ++p) {
+                    info.ptsCoords[2 * p] =
+                        info.bbox.x1 + landmark_data[NUM_PTS + p] * w - 1;
+                    info.ptsCoords[2 * p + 1] = info.bbox.y1 + landmark_data[p] * h - 1;
+                }
+
+                out_faces.push_back(info);
+            }
+        }
+        std::cout << "OCVONetPostProc!!! out faces number " << out_faces.size() << " for threshold " << threshold << std::endl;
+    }
+};// GAPI_OCV_KERNEL(ONetPostProc)
+
+GAPI_OCV_KERNEL(OCVSwapFaces, SwapFaces) {
+    static void run(const std::vector<Face> &in_faces,
+        std::vector<Face> &out_faces) {
+        std::vector<Face> in_faces_copy = in_faces;
+        out_faces.clear();
+        if (!in_faces_copy.empty()) {
+            for (size_t i = 0; i < in_faces_copy.size(); ++i) {
+                std::swap(in_faces_copy[i].bbox.x1, in_faces_copy[i].bbox.y1);
+                std::swap(in_faces_copy[i].bbox.x2, in_faces_copy[i].bbox.y2);
+                for (int p = 0; p < NUM_PTS; ++p) {
+                    std::swap(in_faces_copy[i].ptsCoords[2 * p], in_faces_copy[i].ptsCoords[2 * p + 1]);
+                }
+            }
+            out_faces = in_faces_copy;
+        }
+    }
+};// GAPI_OCV_KERNEL(SwapFaces)
 
 
 } // anonymous namespace
@@ -508,8 +565,13 @@ int main(int argc, char *argv[])
     const auto tmcnnr_model_path = cmd.get<std::string>("mtcnnrm");
     const auto tmcnnr_target_dev = cmd.get<std::string>("mtcnnrd");
     const auto tmcnnr_conf_thresh = cmd.get<double>("thrr");
+    const auto tmcnno_model_path = cmd.get<std::string>("mtcnnom");
+    const auto tmcnno_target_dev = cmd.get<std::string>("mtcnnod");
+    const auto tmcnno_conf_thresh = cmd.get<double>("thro");
 
-    //Proposal part of graph
+
+    //Proposal part of MTCNN graph
+    //TODO: replace with generic infer PNet
     //960x540
     cv::GMat in_original;
     cv::GMat in0 = cv::gapi::resize(in_original, cv::Size(960, 540));
@@ -517,60 +579,72 @@ int main(int argc, char *argv[])
     std::tie(regressions0, scores0) = cv::gapi::infer<custom::MTCNNProposal_960x540>(in0);
     float currentScale = 0.5f;
     cv::GArray<custom::Face> faces0 = custom::BuildFaces::on(scores0, regressions0, currentScale, tmcnnp_conf_thresh);
-    cv::GArray<custom::Face> nms_p_faces0 = custom::RunNMS::on(faces0, 0.5f);
+    cv::GArray<custom::Face> nms_p_faces0 = custom::RunNMS::on(faces0, 0.5f, false);
     //480x270
     cv::GMat in1 = cv::gapi::resize(in0, cv::Size(480, 270));
     cv::GMat regressions1, scores1;
     std::tie(regressions1, scores1) = cv::gapi::infer<custom::MTCNNProposal_480x270>(in1);
     currentScale = currentScale / 2.0f;
     cv::GArray<custom::Face> faces1 = custom::BuildFaces::on(scores1, regressions1, currentScale, tmcnnp_conf_thresh);
-    cv::GArray<custom::Face> nms_p_faces1 = custom::RunNMS::on(faces1, 0.5f);
+    cv::GArray<custom::Face> nms_p_faces1 = custom::RunNMS::on(faces1, 0.5f, false);
     //240x135
     cv::GMat in2 = cv::gapi::resize(in1, cv::Size(240, 135));
     cv::GMat regressions2, scores2;
     std::tie(regressions2, scores2) = cv::gapi::infer<custom::MTCNNProposal_240x135>(in2);
     currentScale = currentScale / 2.0f;
     cv::GArray<custom::Face> faces2 = custom::BuildFaces::on(scores2, regressions2, currentScale, tmcnnp_conf_thresh);
-    cv::GArray<custom::Face> nms_p_faces2 = custom::RunNMS::on(faces2, 0.5f);
+    cv::GArray<custom::Face> nms_p_faces2 = custom::RunNMS::on(faces2, 0.5f, false);
     //120x67
     cv::GMat in3 = cv::gapi::resize(in2, cv::Size(120, 67));
     cv::GMat regressions3, scores3;
     std::tie(regressions3, scores3) = cv::gapi::infer<custom::MTCNNProposal_120x67>(in3);
     currentScale = currentScale / 2.0f;
     cv::GArray<custom::Face> faces3 = custom::BuildFaces::on(scores3, regressions3, currentScale, tmcnnp_conf_thresh);
-    cv::GArray<custom::Face> nms_p_faces3 = custom::RunNMS::on(faces3, 0.5f);
+    cv::GArray<custom::Face> nms_p_faces3 = custom::RunNMS::on(faces3, 0.5f, false);
     //60x34
     cv::GMat in4 = cv::gapi::resize(in3, cv::Size(60, 33));
     cv::GMat regressions4, scores4;
     std::tie(regressions4, scores4) = cv::gapi::infer<custom::MTCNNProposal_60x33>(in4);
     currentScale = currentScale / 2.0f;
     cv::GArray<custom::Face> faces4 = custom::BuildFaces::on(scores4, regressions4, currentScale, tmcnnp_conf_thresh);
-    cv::GArray<custom::Face> nms_p_faces4 = custom::RunNMS::on(faces4, 0.5f);
+    cv::GArray<custom::Face> nms_p_faces4 = custom::RunNMS::on(faces4, 0.5f, false);
     //30x17
     cv::GMat in5 = cv::gapi::resize(in4, cv::Size(30, 16));
     cv::GMat regressions5, scores5;
     std::tie(regressions5, scores5) = cv::gapi::infer<custom::MTCNNProposal_30x16>(in5);
     currentScale = currentScale / 2.0f;
     cv::GArray<custom::Face> faces5 = custom::BuildFaces::on(scores5, regressions5, currentScale, tmcnnp_conf_thresh);
-    cv::GArray<custom::Face> nms_p_faces5 = custom::RunNMS::on(faces5, 0.5f);
+    cv::GArray<custom::Face> nms_p_faces5 = custom::RunNMS::on(faces5, 0.5f, false);
     cv::GArray<custom::Face> nms_p_faces_total = custom::MergePyramidOutputs::on(nms_p_faces0, nms_p_faces1, nms_p_faces2, nms_p_faces3, nms_p_faces4, nms_p_faces5);
     //Proposal post-processing
-    cv::GArray<custom::Face> nms07_p_faces_total = custom::RunNMS::on(nms_p_faces_total, 0.7f);
+    cv::GArray<custom::Face> nms07_p_faces_total = custom::RunNMS::on(nms_p_faces_total, 0.7f, false);
     cv::GArray<custom::Face> final_p_faces_for_bb2squares = custom::ApplyRegression::on(nms07_p_faces_total, false);
     cv::GArray<custom::Face> final_faces_pnet = custom::BBoxesToSquares::on(final_p_faces_for_bb2squares);
 
-    //Refinement part of graph
-    cv::GArray<cv::Rect> faces_roi = custom::RNetPreProcGetROIs::on(final_faces_pnet);
+    //Refinement part of MTCNN graph
+    cv::GArray<cv::Rect> faces_roi_pnet = custom::R_O_NetPreProcGetROIs::on(final_faces_pnet);
     cv::GArray<cv::GMat> regressionsRNet, scoresRNet;
-    std::tie(regressionsRNet, scoresRNet) = cv::gapi::infer<custom::MTCNNRefinement>(faces_roi, in_original);
+    std::tie(regressionsRNet, scoresRNet) = cv::gapi::infer<custom::MTCNNRefinement>(faces_roi_pnet, in_original);
 
     //Refinement post-processing
     cv::GArray<custom::Face> rnet_post_proc_faces = custom::RNetPostProc::on(final_faces_pnet, scoresRNet, regressionsRNet, tmcnnr_conf_thresh);
-    cv::GArray<custom::Face> nms07_r_faces_total = custom::RunNMS::on(rnet_post_proc_faces, 0.7f);
+    cv::GArray<custom::Face> nms07_r_faces_total = custom::RunNMS::on(rnet_post_proc_faces, 0.7f, false);
     cv::GArray<custom::Face> final_r_faces_for_bb2squares = custom::ApplyRegression::on(nms07_r_faces_total, true);
     cv::GArray<custom::Face> final_faces_rnet = custom::BBoxesToSquares::on(final_r_faces_for_bb2squares);
 
-    cv::GComputation graph_mtcnn(cv::GIn(in_original), cv::GOut(cv::gapi::copy(in_original), final_faces_rnet));
+    //Output part of MTCNN graph
+    cv::GArray<cv::Rect> faces_roi_rnet = custom::R_O_NetPreProcGetROIs::on(final_faces_rnet);
+    cv::GArray<cv::GMat> regressionsONet, scoresONet, landmarksONet;
+    std::tie(regressionsONet, landmarksONet, scoresONet) = cv::gapi::infer<custom::MTCNNOutput>(faces_roi_rnet, in_original);
+
+    //Output post-processing
+    cv::GArray<custom::Face> onet_post_proc_faces = custom::ONetPostProc::on(final_faces_rnet, scoresONet, regressionsONet, landmarksONet, tmcnno_conf_thresh);
+    cv::GArray<custom::Face> final_o_faces_for_nms07 = custom::ApplyRegression::on(onet_post_proc_faces, true);
+    cv::GArray<custom::Face> nms07_o_faces_total = custom::RunNMS::on(rnet_post_proc_faces, 0.7f, true);
+    cv::GArray<custom::Face> final_faces_onet = custom::SwapFaces::on(nms07_o_faces_total);
+
+    cv::GComputation graph_mtcnn(cv::GIn(in_original), cv::GOut(cv::gapi::copy(in_original), final_faces_onet));
+    //cv::GComputation graph_mtcnn(cv::GIn(in_original), cv::GOut(cv::gapi::copy(in_original), final_faces_rnet));
     //cv::GComputation graph_mtcnn(cv::GIn(in_original), cv::GOut(cv::gapi::copy(in_original), final_faces_pnet));
 
 
@@ -624,8 +698,15 @@ int main(int argc, char *argv[])
         tmcnnr_model_path,                // path to topology IR
         weights_path(tmcnnr_model_path),  // path to weights
         tmcnnr_target_dev,                // device specifier
-    //}.cfgOutputLayers({ "conv5-2", "prob1" }).cfgInputReshape({ {"data", reshape_dims_24x24} });
     }.cfgOutputLayers({ "conv5-2", "prob1" }).cfgInputLayers({ "data" });
+
+    // MTCNN Output detection network
+    std::vector<size_t> reshape_dims_48x48 = { 1, 3, 48, 48 };
+    auto mtcnno_net = cv::gapi::ie::Params<custom::MTCNNOutput>{
+        tmcnno_model_path,                // path to topology IR
+        weights_path(tmcnno_model_path),  // path to weights
+        tmcnno_target_dev,                // device specifier
+    }.cfgOutputLayers({ "conv6-2", "conv6-3", "prob1" }).cfgInputLayers({ "data" });
 
     auto networks_mtcnn = cv::gapi::networks(mtcnnp_net_960x540
                                              , mtcnnp_net_480x270
@@ -633,7 +714,8 @@ int main(int argc, char *argv[])
                                              , mtcnnp_net_120x67
                                              , mtcnnp_net_60x33
                                              , mtcnnp_net_30x16
-                                             , mtcnnr_net);
+                                             , mtcnnr_net
+                                             , mtcnno_net);
 
     auto kernels_mtcnn = cv::gapi::kernels< custom::OCVBuildFaces
         , custom::OCVRunNMS
@@ -641,8 +723,9 @@ int main(int argc, char *argv[])
         , custom::OCVMergePyramidOutputs
         , custom::OCVApplyRegression
         , custom::OCVBBoxesToSquares
-        , custom::OCVRNetPreProcGetROIs
+        , custom::OCVR_O_NetPreProcGetROIs
         , custom::OCVRNetPostProc
+        , custom::OCVONetPostProc
     >();
     auto pipeline_mtcnn = graph_mtcnn.compileStreaming(cv::compile_args(networks_mtcnn, kernels_mtcnn));
 
