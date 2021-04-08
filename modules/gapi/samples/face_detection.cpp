@@ -253,15 +253,6 @@ G_API_OP(BuildFaces,
     }
 };
 
-G_API_OP(RunNMSAccum,
-         <GFaces(GFaces, float)>,
-          "sample.custom.mtcnn.run_nms_accum") {
-    static cv::GArrayDesc outMeta(const cv::GArrayDesc&,
-                                  float) {
-        return cv::empty_array_desc();
-    }
-};
-
 G_API_OP(RunNMS,
     <GFaces(GFaces, float, bool)>,
     "sample.custom.mtcnn.run_nms") {
@@ -360,19 +351,6 @@ GAPI_OCV_KERNEL(OCVBuildFaces, BuildFaces) {
     }
 };// GAPI_OCV_KERNEL(BuildFaces)
 
-
-GAPI_OCV_KERNEL(OCVRunNMSAccum, RunNMSAccum) {
-    static void run(const std::vector<Face> &in_faces,
-                    float threshold,
-                    std::vector<Face> &out_faces) {
-        std::vector<Face> in_faces_copy = in_faces;
-        std::vector<Face> nms_faces = Face::runNMS(in_faces_copy, threshold);
-        if (!nms_faces.empty()) {
-            out_faces.insert(out_faces.end(), nms_faces.begin(), nms_faces.end());
-        }
-    }
-};// GAPI_OCV_KERNEL(RunNMSAccum)
-
 GAPI_OCV_KERNEL(OCVRunNMS, RunNMS) {
     static void run(const std::vector<Face> &in_faces,
         float threshold,
@@ -380,6 +358,10 @@ GAPI_OCV_KERNEL(OCVRunNMS, RunNMS) {
         std::vector<Face> &out_faces) {
         std::vector<Face> in_faces_copy = in_faces;
         out_faces = Face::runNMS(in_faces_copy, threshold, useMin);
+        std::cout << "OCVRunNMS!!! in_faces size " << in_faces.size() <<
+                     " out_faces size " << out_faces.size() <<
+                     " for threshold " << threshold <<
+                     " and useMin " << useMin <<  std::endl;
     }
 };// GAPI_OCV_KERNEL(RunNMS)
 
@@ -424,6 +406,8 @@ GAPI_OCV_KERNEL(OCVApplyRegression, ApplyRegression) {
         if (!in_faces_copy.empty()) {
             out_faces.insert(out_faces.end(), in_faces_copy.begin(), in_faces_copy.end());
         }
+        std::cout << "OCVApplyRegression!!! in_faces size " << in_faces.size() <<
+                     " out_faces size " << out_faces.size() << " and addOne " << addOne << std::endl;
     }
 };// GAPI_OCV_KERNEL(ApplyRegression)
 
@@ -437,7 +421,8 @@ GAPI_OCV_KERNEL(OCVBBoxesToSquares, BBoxesToSquares) {
         if (!in_faces_copy.empty()) {
             out_faces.insert(out_faces.end(), in_faces_copy.begin(), in_faces_copy.end());
         }
-        std::cout << "OCVBBoxesToSquares!!! input faces number " << in_faces.size() << " output faces number " << out_faces.size() << std::endl;
+        std::cout << "OCVBBoxesToSquares!!! input faces number " << in_faces.size() <<
+                     " output faces number " << out_faces.size() << std::endl;
     }
 };// GAPI_OCV_KERNEL(BBoxesToSquares)
 
@@ -453,7 +438,8 @@ GAPI_OCV_KERNEL(OCVR_O_NetPreProcGetROIs, R_O_NetPreProcGetROIs) {
             outs.push_back(tmp_rect);
             //outs.push_back(f.bbox.getRect());
         }
-        std::cout << "OCVR_O_NetPreProcGetROIs!!! input faces number " << in_faces.size() <<  " output faces number " << outs.size() << std::endl;
+        std::cout << "OCVR_O_NetPreProcGetROIs!!! input faces number " << in_faces.size() <<
+                     " output faces number " << outs.size() << std::endl;
     }
 };// GAPI_OCV_KERNEL(R_O_NetPreProcGetROIs)
 
@@ -465,7 +451,9 @@ GAPI_OCV_KERNEL(OCVRNetPostProc, RNetPostProc) {
         float threshold,
         std::vector<Face> &out_faces) {
         out_faces.clear();
-        std::cout << "OCVRNetPostProc!!! input scores number " << in_scores.size() << " input regressions number " << in_regresssions.size() << " input faces size " << in_faces.size() << std::endl;
+        std::cout << "OCVRNetPostProc!!! input scores number " << in_scores.size() <<
+                     " input regressions number " << in_regresssions.size() <<
+                     " input faces size " << in_faces.size() << std::endl;
         for (unsigned int k = 0; k < in_faces.size(); ++k) {
             const float* scores_data = (float*)in_scores[k].data;
             const float* reg_data = (float*)in_regresssions[k].data;
@@ -478,7 +466,8 @@ GAPI_OCV_KERNEL(OCVRNetPostProc, RNetPostProc) {
                 out_faces.push_back(info);
             }
         }
-        std::cout << "OCVRNetPostProc!!! out faces number " << out_faces.size() << " for threshold " << threshold << std::endl;
+        std::cout << "OCVRNetPostProc!!! out faces number " << out_faces.size() <<
+                     " for threshold " << threshold << std::endl;
     }
 };// GAPI_OCV_KERNEL(RNetPostProc)
 
@@ -722,7 +711,6 @@ int main(int argc, char *argv[])
 
     auto kernels_mtcnn = cv::gapi::kernels< custom::OCVBuildFaces
         , custom::OCVRunNMS
-        , custom::OCVRunNMSAccum
         , custom::OCVMergePyramidOutputs
         , custom::OCVApplyRegression
         , custom::OCVBBoxesToSquares
@@ -735,7 +723,17 @@ int main(int argc, char *argv[])
 
 
     std::cout << "Reading " << input_file_name << std::endl;
-
+#if 1
+    // Input image
+    auto in_src = cv::imread(input_file_name);
+    cv::Mat image;
+    std::vector<custom::Face> out_faces;
+    auto graph_mtcnn_compiled = graph_mtcnn.compile(descr_of(gin(in_src)), cv::compile_args(networks_mtcnn, kernels_mtcnn));
+    graph_mtcnn_compiled(gin(image), gout(image, out_faces));
+    for (auto&& rc : out_faces) vis::bbox(image, rc.bbox.getRect());
+    cv::imshow("Out", image);
+    cv::waitKey(-1);
+#else
     // Input stream
     auto in_src = cv::gapi::wip::make_src<cv::gapi::wip::GCaptureSource>(input_file_name);
 
@@ -769,5 +767,6 @@ int main(int argc, char *argv[])
     tm.stop();
     std::cout << "Processed " << frames << " frames"
               << " (" << frames / tm.getTimeSec() << " FPS)" << std::endl;
+#endif
     return 0;
 }
