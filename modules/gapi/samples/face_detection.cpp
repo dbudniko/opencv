@@ -729,7 +729,7 @@ int main(int argc, char *argv[])
     cv::Mat image;
     std::vector<custom::Face> out_faces;
     auto graph_mtcnn_compiled = graph_mtcnn.compile(descr_of(gin(in_src)), cv::compile_args(networks_mtcnn, kernels_mtcnn));
-    graph_mtcnn_compiled(gin(image), gout(image, out_faces));
+    graph_mtcnn_compiled(gin(in_src), gout(image, out_faces));
     for (auto&& rc : out_faces) vis::bbox(image, rc.bbox.getRect());
     cv::imshow("Out", image);
     cv::waitKey(-1);
