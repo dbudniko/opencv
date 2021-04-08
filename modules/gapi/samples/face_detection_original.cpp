@@ -522,9 +522,9 @@ namespace custom {
                 for (unsigned int k = 0; k < in_faces.size(); ++k) {
                     const float* scores_data = (float*)in_scores[k].data;
                     const float* reg_data = (float*)in_regresssions[k].data;
-                    std::cout << "OCVRNetPostProc!!! scores_data[0] " << scores_data[0] << " scores_data[1] " << scores_data[1] << std::endl;
-                    std::cout << "OCVRNetPostProc!!! reg_data[0] " << reg_data[0] << " reg_data[1] " << reg_data[1] <<
-                        "reg_data[2] " << reg_data[2] << " reg_data[3] " << reg_data[3] << std::endl;
+                    //std::cout << "OCVRNetPostProc!!! scores_data[0] " << scores_data[0] << " scores_data[1] " << scores_data[1] << std::endl;
+                    //std::cout << "OCVRNetPostProc!!! reg_data[0] " << reg_data[0] << " reg_data[1] " << reg_data[1] <<
+                    //    "reg_data[2] " << reg_data[2] << " reg_data[3] " << reg_data[3] << std::endl;
                     if (scores_data[1] >= threshold) {
                         Face info = in_faces[k];
                         info.score = scores_data[1];
@@ -774,104 +774,104 @@ int main(int argc, char* argv[])
 
 
     // MTCNN Proposal detection network
-    //std::vector<size_t> reshape_dims_1777_1000 = { 1, 3, 1000, 1777 };
-    std::vector<size_t> reshape_dims_1777_1000 = { 1, 3, 1777, 1000 };
+    std::vector<size_t> reshape_dims_1777_1000 = { 1, 3, 1000, 1777 };
+    //std::vector<size_t> reshape_dims_1777_1000 = { 1, 3, 1777, 1000 };
     auto mtcnnp_net_1777x1000 = cv::gapi::ie::Params<custom::MTCNNProposal_1777x1000>{
         tmcnnp_model_path,                // path to topology IR
         weights_path(tmcnnp_model_path),  // path to weights
         tmcnnp_target_dev,                // device specifier
     }.cfgOutputLayers({ "conv4-2", "prob1" }).cfgInputReshape({ {"data", reshape_dims_1777_1000} });
 
-    //std::vector<size_t> reshape_dims_1260x709 = { 1, 3, 709, 1260 };
-    std::vector<size_t> reshape_dims_1260x709 = { 1, 3, 1260, 709 };
+    std::vector<size_t> reshape_dims_1260x709 = { 1, 3, 709, 1260 };
+    //std::vector<size_t> reshape_dims_1260x709 = { 1, 3, 1260, 709 };
     auto mtcnnp_net_1260x709 = cv::gapi::ie::Params<custom::MTCNNProposal_1260x709>{
         tmcnnp_model_path,                // path to topology IR
         weights_path(tmcnnp_model_path),  // path to weights
         tmcnnp_target_dev,                // device specifier
     }.cfgOutputLayers({ "conv4-2", "prob1" }).cfgInputReshape({ {"data", reshape_dims_1260x709} });
 
-    //::vector<size_t> reshape_dims_893x502 = { 1, 3, 502, 893 };
-    std::vector<size_t> reshape_dims_893x502 = { 1, 3, 893, 502 };
+    std::vector<size_t> reshape_dims_893x502 = { 1, 3, 502, 893 };
+    //std::vector<size_t> reshape_dims_893x502 = { 1, 3, 893, 502 };
     auto mtcnnp_net_893x502 = cv::gapi::ie::Params<custom::MTCNNProposal_893x502>{
         tmcnnp_model_path,                // path to topology IR
         weights_path(tmcnnp_model_path),  // path to weights
         tmcnnp_target_dev,                // device specifier
     }.cfgOutputLayers({ "conv4-2", "prob1" }).cfgInputReshape({ {"data", reshape_dims_893x502} });
 
-    //std::vector<size_t> reshape_dims_633x356 = { 1, 3, 356, 633 };
-    std::vector<size_t> reshape_dims_633x356 = { 1, 3, 633, 356 };
+    std::vector<size_t> reshape_dims_633x356 = { 1, 3, 356, 633 };
+    //std::vector<size_t> reshape_dims_633x356 = { 1, 3, 633, 356 };
     auto mtcnnp_net_633x356 = cv::gapi::ie::Params<custom::MTCNNProposal_633x356>{
         tmcnnp_model_path,                // path to topology IR
         weights_path(tmcnnp_model_path),  // path to weights
         tmcnnp_target_dev,                // device specifier
     }.cfgOutputLayers({ "conv4-2", "prob1" }).cfgInputReshape({ {"data", reshape_dims_633x356} });
 
-    //std::vector<size_t> reshape_dims_449x252 = { 1, 3, 252, 449 };
-    std::vector<size_t> reshape_dims_449x252 = { 1, 3, 449, 252 };
+    std::vector<size_t> reshape_dims_449x252 = { 1, 3, 252, 449 };
+    //std::vector<size_t> reshape_dims_449x252 = { 1, 3, 449, 252 };
     auto mtcnnp_net_449x252 = cv::gapi::ie::Params<custom::MTCNNProposal_449x252>{
         tmcnnp_model_path,                // path to topology IR
         weights_path(tmcnnp_model_path),  // path to weights
         tmcnnp_target_dev,                // device specifier
     }.cfgOutputLayers({ "conv4-2", "prob1" }).cfgInputReshape({ {"data", reshape_dims_449x252} });
 
-    //std::vector<size_t> reshape_dims_318x179 = { 1, 3, 179, 318 };
-    std::vector<size_t> reshape_dims_318x179 = { 1, 3, 318, 179 };
+    std::vector<size_t> reshape_dims_318x179 = { 1, 3, 179, 318 };
+    //std::vector<size_t> reshape_dims_318x179 = { 1, 3, 318, 179 };
     auto mtcnnp_net_318x179 = cv::gapi::ie::Params<custom::MTCNNProposal_318x179>{
         tmcnnp_model_path,                // path to topology IR
         weights_path(tmcnnp_model_path),  // path to weights
         tmcnnp_target_dev,                // device specifier
     }.cfgOutputLayers({ "conv4-2", "prob1" }).cfgInputReshape({ {"data", reshape_dims_318x179} });
 
-    //std::vector<size_t> reshape_dims_225x127 = { 1, 3, 127, 225 };
-    std::vector<size_t> reshape_dims_225x127 = { 1, 3, 225, 127 };
+    std::vector<size_t> reshape_dims_225x127 = { 1, 3, 127, 225 };
+    //std::vector<size_t> reshape_dims_225x127 = { 1, 3, 225, 127 };
     auto mtcnnp_net_225x127 = cv::gapi::ie::Params<custom::MTCNNProposal_225x127>{
         tmcnnp_model_path,                // path to topology IR
         weights_path(tmcnnp_model_path),  // path to weights
         tmcnnp_target_dev,                // device specifier
     }.cfgOutputLayers({ "conv4-2", "prob1" }).cfgInputReshape({ {"data", reshape_dims_225x127} });
 
-    //std::vector<size_t> reshape_dims_160x90 = { 1, 3, 90, 160 };
-    std::vector<size_t> reshape_dims_160x90 = { 1, 3, 160, 90 };
+    std::vector<size_t> reshape_dims_160x90 = { 1, 3, 90, 160 };
+    //std::vector<size_t> reshape_dims_160x90 = { 1, 3, 160, 90 };
     auto mtcnnp_net_160x90 = cv::gapi::ie::Params<custom::MTCNNProposal_160x90>{
         tmcnnp_model_path,                // path to topology IR
         weights_path(tmcnnp_model_path),  // path to weights
         tmcnnp_target_dev,                // device specifier
     }.cfgOutputLayers({ "conv4-2", "prob1" }).cfgInputReshape({ {"data", reshape_dims_160x90} });
 
-    //std::vector<size_t> reshape_dims_113x63 = { 1, 3, 63, 113 };
-    std::vector<size_t> reshape_dims_113x63 = { 1, 3, 113, 63 };
+    std::vector<size_t> reshape_dims_113x63 = { 1, 3, 63, 113 };
+    //std::vector<size_t> reshape_dims_113x63 = { 1, 3, 113, 63 };
     auto mtcnnp_net_113x63 = cv::gapi::ie::Params<custom::MTCNNProposal_113x63>{
         tmcnnp_model_path,                // path to topology IR
         weights_path(tmcnnp_model_path),  // path to weights
         tmcnnp_target_dev,                // device specifier
     }.cfgOutputLayers({ "conv4-2", "prob1" }).cfgInputReshape({ {"data", reshape_dims_113x63} });
 
-    //std::vector<size_t> reshape_dims_80x45 = { 1, 3, 45, 80 };
-    std::vector<size_t> reshape_dims_80x45 = { 1, 3, 80, 45 };
+    std::vector<size_t> reshape_dims_80x45 = { 1, 3, 45, 80 };
+    //std::vector<size_t> reshape_dims_80x45 = { 1, 3, 80, 45 };
     auto mtcnnp_net_80x45 = cv::gapi::ie::Params<custom::MTCNNProposal_80x45>{
         tmcnnp_model_path,                // path to topology IR
         weights_path(tmcnnp_model_path),  // path to weights
         tmcnnp_target_dev,                // device specifier
     }.cfgOutputLayers({ "conv4-2", "prob1" }).cfgInputReshape({ {"data", reshape_dims_80x45} });
 
-    //std::vector<size_t> reshape_dims_57x32 = { 1, 3, 32, 57 };
-    std::vector<size_t> reshape_dims_57x32 = { 1, 3, 57, 32 };
+    std::vector<size_t> reshape_dims_57x32 = { 1, 3, 32, 57 };
+    //std::vector<size_t> reshape_dims_57x32 = { 1, 3, 57, 32 };
     auto mtcnnp_net_57x32 = cv::gapi::ie::Params<custom::MTCNNProposal_57x32>{
         tmcnnp_model_path,                // path to topology IR
         weights_path(tmcnnp_model_path),  // path to weights
         tmcnnp_target_dev,                // device specifier
     }.cfgOutputLayers({ "conv4-2", "prob1" }).cfgInputReshape({ {"data", reshape_dims_57x32} });
 
-    //std::vector<size_t> reshape_dims_40x22 = { 1, 3, 22, 40 };
-    std::vector<size_t> reshape_dims_40x22 = { 1, 3, 40, 22 };
+    std::vector<size_t> reshape_dims_40x22 = { 1, 3, 22, 40 };
+    //std::vector<size_t> reshape_dims_40x22 = { 1, 3, 40, 22 };
     auto mtcnnp_net_40x22 = cv::gapi::ie::Params<custom::MTCNNProposal_40x22>{
         tmcnnp_model_path,                // path to topology IR
         weights_path(tmcnnp_model_path),  // path to weights
         tmcnnp_target_dev,                // device specifier
     }.cfgOutputLayers({ "conv4-2", "prob1" }).cfgInputReshape({ {"data", reshape_dims_40x22} });
 
-    //std::vector<size_t> reshape_dims_28x16 = { 1, 3, 16, 28 };
-    std::vector<size_t> reshape_dims_28x16 = { 1, 3, 28, 16 };
+    std::vector<size_t> reshape_dims_28x16 = { 1, 3, 16, 28 };
+    //std::vector<size_t> reshape_dims_28x16 = { 1, 3, 28, 16 };
     auto mtcnnp_net_28x16 = cv::gapi::ie::Params<custom::MTCNNProposal_28x16>{
         tmcnnp_model_path,                // path to topology IR
         weights_path(tmcnnp_model_path),  // path to weights
