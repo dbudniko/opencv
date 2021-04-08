@@ -457,6 +457,9 @@ GAPI_OCV_KERNEL(OCVRNetPostProc, RNetPostProc) {
         for (unsigned int k = 0; k < in_faces.size(); ++k) {
             const float* scores_data = (float*)in_scores[k].data;
             const float* reg_data = (float*)in_regresssions[k].data;
+            std::cout << "OCVRNetPostProc!!! scores_data[0] " << scores_data[0] << " scores_data[1] " << scores_data[1] << std::endl;
+            std::cout << "OCVRNetPostProc!!! reg_data[0] " << reg_data[0] << " reg_data[1] " << reg_data[1] <<
+                                            "reg_data[2] " << reg_data[2] << " reg_data[3] " << reg_data[3] << std::endl;
             if (scores_data[1] >= threshold) {
                 Face info = in_faces[k];
                 info.score = scores_data[1];
@@ -488,6 +491,8 @@ GAPI_OCV_KERNEL(OCVONetPostProc, ONetPostProc) {
             const float* reg_data = (float*)in_regresssions[k].data;
             const float* landmark_data = (float*)in_landmarks[k].data;
             std::cout << "OCVONetPostProc!!! scores_data[0] " << scores_data[0] << " scores_data[1] " << scores_data[1] << std::endl;
+            std::cout << "OCVONetPostProc!!! reg_data[0] " << reg_data[0] << " reg_data[1] " << reg_data[1] <<
+                                            "reg_data[2] " << reg_data[2] << " reg_data[3] " << reg_data[3] << std::endl;
             if (scores_data[1] >= threshold) {
                 Face info = in_faces[k];
                 info.score = scores_data[1];
@@ -730,6 +735,7 @@ int main(int argc, char *argv[])
     std::vector<custom::Face> out_faces;
     auto graph_mtcnn_compiled = graph_mtcnn.compile(descr_of(gin(in_src)), cv::compile_args(networks_mtcnn, kernels_mtcnn));
     graph_mtcnn_compiled(gin(in_src), gout(image, out_faces));
+    std::cout << "Final Faces Size " << out_faces.size() << std::endl;
     for (auto&& rc : out_faces) vis::bbox(image, rc.bbox.getRect());
     cv::imshow("Out", image);
     cv::waitKey(-1);
