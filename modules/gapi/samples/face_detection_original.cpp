@@ -290,9 +290,17 @@ namespace custom {
         };
 
         G_API_OP(MergePyramidOutputs,
-            <GFaces(GFaces, GFaces, GFaces, GFaces, GFaces, GFaces)>,
+            <GFaces(GFaces, GFaces, GFaces, GFaces, GFaces, GFaces,
+                    GFaces, GFaces, GFaces, GFaces, GFaces, GFaces, GFaces)>,
             "sample.custom.mtcnn.merge_pyramid_outputs") {
             static cv::GArrayDesc outMeta(const cv::GArrayDesc&,
+                const cv::GArrayDesc&,
+                const cv::GArrayDesc&,
+                const cv::GArrayDesc&,
+                const cv::GArrayDesc&,
+                const cv::GArrayDesc&,
+                const cv::GArrayDesc&,
+                const cv::GArrayDesc&,
                 const cv::GArrayDesc&,
                 const cv::GArrayDesc&,
                 const cv::GArrayDesc&,
