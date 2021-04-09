@@ -967,7 +967,7 @@ int main(int argc, char* argv[])
 
     auto resultImg = drawRectsAndPoints(image, data);
     //for (auto&& rc : out_faces) vis::bbox(image, rc.bbox.getRect());
-    cv::imshow("Out", image);
+    cv::imshow("Out", resultImg);
     cv::waitKey(-1);
 #else
     // Input stream
