@@ -611,6 +611,24 @@ namespace vis {
     } // anonymous namespace
 } // namespace vis
 
+using rectPoints = std::pair<cv::Rect, std::vector<cv::Point>>;
+
+static cv::Mat drawRectsAndPoints(const cv::Mat& img,
+    const std::vector<rectPoints> data) {
+    cv::Mat outImg;
+    img.convertTo(outImg, CV_8UC3);
+
+    for (auto& d : data) {
+        cv::rectangle(outImg, d.first, cv::Scalar(0, 0, 255));
+        auto pts = d.second;
+        for (size_t i = 0; i < pts.size(); ++i) {
+            cv::circle(outImg, pts[i], 3, cv::Scalar(0, 0, 255));
+        }
+    }
+    return outImg;
+}
+
+
 const float P_NET_WINDOW_SIZE = 12.f;
 int main(int argc, char* argv[])
 {
@@ -933,7 +951,22 @@ int main(int argc, char* argv[])
     auto graph_mtcnn_compiled = graph_mtcnn.compile(descr_of(gin(in_src)), cv::compile_args(networks_mtcnn, kernels_mtcnn));
     graph_mtcnn_compiled(gin(in_src), gout(image, out_faces));
     std::cout << "Final Faces Size " << out_faces.size() << std::endl;
-    for (auto&& rc : out_faces) vis::bbox(image, rc.bbox.getRect());
+    std::vector<rectPoints> data;
+    // show the image with faces in it
+    for (size_t i = 0; i < out_faces.size(); ++i) {
+        std::vector<cv::Point> pts;
+        for (int p = 0; p < NUM_PTS; ++p) {
+            pts.push_back(
+                cv::Point(out_faces[i].ptsCoords[2 * p], out_faces[i].ptsCoords[2 * p + 1]));
+        }
+
+        auto rect = out_faces[i].bbox.getRect();
+        auto d = std::make_pair(rect, pts);
+        data.push_back(d);
+    }
+
+    auto resultImg = drawRectsAndPoints(image, data);
+    //for (auto&& rc : out_faces) vis::bbox(image, rc.bbox.getRect());
     cv::imshow("Out", image);
     cv::waitKey(-1);
 #else
