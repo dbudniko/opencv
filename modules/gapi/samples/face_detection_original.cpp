@@ -951,6 +951,7 @@ int main(int argc, char* argv[])
     auto graph_mtcnn_compiled = graph_mtcnn.compile(descr_of(gin(in_src)), cv::compile_args(networks_mtcnn, kernels_mtcnn));
     graph_mtcnn_compiled(gin(in_src), gout(image, out_faces));
     std::cout << "Final Faces Size " << out_faces.size() << std::endl;
+
     std::vector<rectPoints> data;
     // show the image with faces in it
     for (size_t i = 0; i < out_faces.size(); ++i) {
@@ -964,10 +965,10 @@ int main(int argc, char* argv[])
         auto d = std::make_pair(rect, pts);
         data.push_back(d);
     }
-
     auto resultImg = drawRectsAndPoints(image, data);
-    //for (auto&& rc : out_faces) vis::bbox(image, rc.bbox.getRect());
-    cv::imshow("Out", resultImg);
+    //cv::imshow("Out", resultImg);
+    for (auto&& rc : out_faces) vis::bbox(image, rc.bbox.getRect());
+    cv::imshow("Out", image);
     cv::waitKey(-1);
 #else
     // Input stream
