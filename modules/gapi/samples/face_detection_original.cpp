@@ -957,6 +957,7 @@ int main(int argc, char* argv[])
         , custom::OCVRNetPostProc
         , custom::OCVONetPostProc
         , custom::OCVSwapFaces
+        , custom::OCVTranspose
     >();
     auto pipeline_mtcnn = graph_mtcnn.compileStreaming(cv::compile_args(networks_mtcnn, kernels_mtcnn));
 
