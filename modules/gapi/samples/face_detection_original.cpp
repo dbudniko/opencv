@@ -378,12 +378,15 @@ namespace custom {
             "sample.custom.mtcnn.transpose") {
             static cv::GMatDesc outMeta(const cv::GMatDesc in
             ) {
-                cv::GMatDesc out = in;
-                cv::Size tmp_size;
-                tmp_size.height = in.size.width;
-                tmp_size.width = in.size.height;
-                out.size = tmp_size;
-                return out;
+                //cv::GMatDesc out = in;
+                //cv::Size tmp_size;
+                //tmp_size.height = in.size.width;
+                //tmp_size.width = in.size.height;
+                //out.size = tmp_size;
+                // out;
+                const cv::GMatDesc out_desc = { in.depth, in.chan, cv::Size(in.size.height,
+                                                                     in.size.width) };
+                return out_desc;
             }
         };
         //Custom kernels implementation
