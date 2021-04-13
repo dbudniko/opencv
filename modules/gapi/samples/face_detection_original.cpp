@@ -168,10 +168,34 @@ namespace custom {
             auto h = scores.size[2];
             auto size = w * h;
 
+            std::cout << "scores_data w "  << w <<  " scores_data h "  << h << std::endl;
+
+
             const float* scores_data = (float*)(scores.data);
+            for(int i = 0; i < 200; i++)
+            {
+                std::cout << scores_data[i] << " ";
+            }
+            std::cout << std::endl;
             scores_data += size;
 
+            //std::cout << "scores_data shifted by size  "  << size << std::endl;
+
+            //for(int i = 0; i < 200; i++)
+            //{
+            //    std::cout << scores_data[i] << " ";
+            //}
+
             const float* reg_data = (float*)(regressions.data);
+            //auto wr = regressions.size[3];
+            //auto hr = regressions.size[2];
+            //std::cout << "regressions_data w "  << wr <<  " regressions_data h "  << hr << std::endl;
+            //for(int i = 0; i < 200; i++)
+            //{
+            //    std::cout << reg_data[i] << " ";
+            //}
+            //std::cout << std::endl;
+
 
             std::vector<Face> boxes;
 
@@ -514,8 +538,8 @@ namespace custom {
                 outs.clear();
                 for (auto& f : in_faces) {
                     cv::Rect tmp_rect = f.bbox.getRect();
-                    if (tmp_rect.x + tmp_rect.width >= 1920) tmp_rect.width = 1920 - tmp_rect.x - 4;
-                    if (tmp_rect.y + tmp_rect.height >= 1080) tmp_rect.height = 1080 - tmp_rect.y - 4;
+                    if (tmp_rect.x + tmp_rect.width >= 1080) tmp_rect.width = 1080 - tmp_rect.x - 4;
+                    if (tmp_rect.y + tmp_rect.height >= 1920) tmp_rect.height = 1920 - tmp_rect.y - 4;
                     outs.push_back(tmp_rect);
                     //outs.push_back(f.bbox.getRect());
                 }
@@ -542,6 +566,9 @@ namespace custom {
                     //std::cout << "OCVRNetPostProc!!! reg_data[0] " << reg_data[0] << " reg_data[1] " << reg_data[1] <<
                     //    "reg_data[2] " << reg_data[2] << " reg_data[3] " << reg_data[3] << std::endl;
                     if (scores_data[1] >= threshold) {
+                        std::cout << "OCVRNetPostProc!!! scores_data[0] " << scores_data[0] << " scores_data[1] " << scores_data[1] << std::endl;
+                        std::cout << "OCVRNetPostProc!!! reg_data[0] " << reg_data[0] << " reg_data[1] " << reg_data[1] <<
+                                     "reg_data[2] " << reg_data[2] << " reg_data[3] " << reg_data[3] << std::endl;
                         Face info = in_faces[k];
                         info.score = scores_data[1];
                         for (int i = 0; i < 4; ++i) {
@@ -675,96 +702,109 @@ int main(int argc, char* argv[])
     //Preprocessing BGR2RGB + transpose (NCWH is expected instead of NCHW)
     cv::GMat in_originalBGR;
     cv::GMat in_originalRGB = cv::gapi::BGR2RGB(in_originalBGR);
-    cv::GMat in_original = custom::Transpose::on(in_originalRGB);
     //TODO: replace with generic infer PNet
     //1777x1000
-    //cv::GMat in0 = cv::gapi::resize(in_original, cv::Size(1777, 1000));
+    cv::GMat in0 = cv::gapi::resize(in_originalRGB, cv::Size(1777, 1000));
+    cv::GMat in0_tr = custom::Transpose::on(in0);
     cv::GMat regressions0, scores0;
-    std::tie(regressions0, scores0) = cv::gapi::infer<custom::MTCNNProposal_1777x1000>(in_original);
+    std::tie(regressions0, scores0) = cv::gapi::infer<custom::MTCNNProposal_1777x1000>(in0_tr);
     float currentScale = 0.9259259259259259f;
     cv::GArray<custom::Face> faces0 = custom::BuildFaces::on(scores0, regressions0, currentScale, tmcnnp_conf_thresh);
     cv::GArray<custom::Face> nms_p_faces0 = custom::RunNMS::on(faces0, 0.5f, false);
+#if 1
     //1260x709
-    //cv::GMat in1 = cv::gapi::resize(in_original, cv::Size(1260, 709));
+    cv::GMat in1 = cv::gapi::resize(in_originalRGB, cv::Size(1260, 709));
+    cv::GMat in1_tr = custom::Transpose::on(in1);
     cv::GMat regressions1, scores1;
-    std::tie(regressions1, scores1) = cv::gapi::infer<custom::MTCNNProposal_1260x709>(in_original);
+    std::tie(regressions1, scores1) = cv::gapi::infer<custom::MTCNNProposal_1260x709>(in1_tr);
     currentScale = 0.6564814814814814f;
     cv::GArray<custom::Face> faces1 = custom::BuildFaces::on(scores1, regressions1, currentScale, tmcnnp_conf_thresh);
     cv::GArray<custom::Face> nms_p_faces1 = custom::RunNMS::on(faces1, 0.5f, false);
     //893x502
-    //cv::GMat in2 = cv::gapi::resize(in_original, cv::Size(893, 502));
+    cv::GMat in2 = cv::gapi::resize(in_originalRGB, cv::Size(893, 502));
+    cv::GMat in2_tr = custom::Transpose::on(in2);
     cv::GMat regressions2, scores2;
-    std::tie(regressions2, scores2) = cv::gapi::infer<custom::MTCNNProposal_893x502>(in_original);
+    std::tie(regressions2, scores2) = cv::gapi::infer<custom::MTCNNProposal_893x502>(in2_tr);
     currentScale = 0.4654453703703703;
     cv::GArray<custom::Face> faces2 = custom::BuildFaces::on(scores2, regressions2, currentScale, tmcnnp_conf_thresh);
     cv::GArray<custom::Face> nms_p_faces2 = custom::RunNMS::on(faces2, 0.5f, false);
     //633x356
-    //cv::GMat in3 = cv::gapi::resize(in_original, cv::Size(633, 356));
+    cv::GMat in3 = cv::gapi::resize(in_originalRGB, cv::Size(633, 356));
+    cv::GMat in3_tr = custom::Transpose::on(in3);
     cv::GMat regressions3, scores3;
-    std::tie(regressions3, scores3) = cv::gapi::infer<custom::MTCNNProposal_633x356>(in_original);
+    std::tie(regressions3, scores3) = cv::gapi::infer<custom::MTCNNProposal_633x356>(in3_tr);
     currentScale = 0.3300007675925925;
     cv::GArray<custom::Face> faces3 = custom::BuildFaces::on(scores3, regressions3, currentScale, tmcnnp_conf_thresh);
     cv::GArray<custom::Face> nms_p_faces3 = custom::RunNMS::on(faces3, 0.5f, false);
     //449x252
-    //cv::GMat in4 = cv::gapi::resize(in_original, cv::Size(449, 252));
+    cv::GMat in4 = cv::gapi::resize(in_originalRGB, cv::Size(449, 252));
+    cv::GMat in4_tr = custom::Transpose::on(in4);
     cv::GMat regressions4, scores4;
-    std::tie(regressions4, scores4) = cv::gapi::infer<custom::MTCNNProposal_449x252>(in_original);
+    std::tie(regressions4, scores4) = cv::gapi::infer<custom::MTCNNProposal_449x252>(in4_tr);
     currentScale = 0.23397054422314809;
     cv::GArray<custom::Face> faces4 = custom::BuildFaces::on(scores4, regressions4, currentScale, tmcnnp_conf_thresh);
     cv::GArray<custom::Face> nms_p_faces4 = custom::RunNMS::on(faces4, 0.5f, false);
     //318x179
-    //cv::GMat in5 = cv::gapi::resize(in_original, cv::Size(318, 179));
+    cv::GMat in5 = cv::gapi::resize(in_originalRGB, cv::Size(318, 179));
+    cv::GMat in5_tr = custom::Transpose::on(in5);
     cv::GMat regressions5, scores5;
-    std::tie(regressions5, scores5) = cv::gapi::infer<custom::MTCNNProposal_318x179>(in_original);
+    std::tie(regressions5, scores5) = cv::gapi::infer<custom::MTCNNProposal_318x179>(in5_tr);
     currentScale = 0.165885115854212;
     cv::GArray<custom::Face> faces5 = custom::BuildFaces::on(scores5, regressions5, currentScale, tmcnnp_conf_thresh);
     cv::GArray<custom::Face> nms_p_faces5 = custom::RunNMS::on(faces5, 0.5f, false);
     //225x127
-    //cv::GMat in6 = cv::gapi::resize(in_original, cv::Size(225, 127));
+    cv::GMat in6 = cv::gapi::resize(in_originalRGB, cv::Size(225, 127));
+    cv::GMat in6_tr = custom::Transpose::on(in6);
     cv::GMat regressions6, scores6;
-    std::tie(regressions6, scores6) = cv::gapi::infer<custom::MTCNNProposal_225x127>(in_original);
+    std::tie(regressions6, scores6) = cv::gapi::infer<custom::MTCNNProposal_225x127>(in6_tr);
     currentScale = 0.1176125471406363;
     cv::GArray<custom::Face> faces6 = custom::BuildFaces::on(scores6, regressions6, currentScale, tmcnnp_conf_thresh);
     cv::GArray<custom::Face> nms_p_faces6 = custom::RunNMS::on(faces6, 0.5f, false);
     //160x90
-    //cv::GMat in7 = cv::gapi::resize(in_original, cv::Size(160, 90));
+    cv::GMat in7 = cv::gapi::resize(in_originalRGB, cv::Size(160, 90));
+    cv::GMat in7_tr = custom::Transpose::on(in7);
     cv::GMat regressions7, scores7;
-    std::tie(regressions7, scores7) = cv::gapi::infer<custom::MTCNNProposal_160x90>(in_original);
+    std::tie(regressions7, scores7) = cv::gapi::infer<custom::MTCNNProposal_160x90>(in7_tr);
     currentScale = 0.08338729592271113;
     cv::GArray<custom::Face> faces7 = custom::BuildFaces::on(scores7, regressions7, currentScale, tmcnnp_conf_thresh);
     cv::GArray<custom::Face> nms_p_faces7 = custom::RunNMS::on(faces7, 0.5f, false);
     //113x63
-    //cv::GMat in8 = cv::gapi::resize(in_original, cv::Size(113, 63));
+    cv::GMat in8 = cv::gapi::resize(in_originalRGB, cv::Size(113, 63));
+    cv::GMat in8_tr = custom::Transpose::on(in8);
     cv::GMat regressions8, scores8;
-    std::tie(regressions8, scores8) = cv::gapi::infer<custom::MTCNNProposal_113x63>(in_original);
+    std::tie(regressions8, scores8) = cv::gapi::infer<custom::MTCNNProposal_113x63>(in8_tr);
     currentScale = 0.059121592809202185;
     cv::GArray<custom::Face> faces8 = custom::BuildFaces::on(scores8, regressions8, currentScale, tmcnnp_conf_thresh);
     cv::GArray<custom::Face> nms_p_faces8 = custom::RunNMS::on(faces8, 0.5f, false);
     //80x45
-    //cv::GMat in9 = cv::gapi::resize(in_original, cv::Size(80, 45));
+    cv::GMat in9 = cv::gapi::resize(in_originalRGB, cv::Size(80, 45));
+    cv::GMat in9_tr = custom::Transpose::on(in9);
     cv::GMat regressions9, scores9;
-    std::tie(regressions9, scores9) = cv::gapi::infer<custom::MTCNNProposal_80x45>(in_original);
+    std::tie(regressions9, scores9) = cv::gapi::infer<custom::MTCNNProposal_80x45>(in9_tr);
     currentScale = 0.041917209301724344;
     cv::GArray<custom::Face> faces9 = custom::BuildFaces::on(scores9, regressions9, currentScale, tmcnnp_conf_thresh);
     cv::GArray<custom::Face> nms_p_faces9 = custom::RunNMS::on(faces9, 0.5f, false);
     //57x32
-    //cv::GMat in10 = cv::gapi::resize(in_original, cv::Size(57, 32));
+    cv::GMat in10 = cv::gapi::resize(in_originalRGB, cv::Size(57, 32));
+    cv::GMat in10_tr = custom::Transpose::on(in10);
     cv::GMat regressions10, scores10;
-    std::tie(regressions10, scores10) = cv::gapi::infer<custom::MTCNNProposal_57x32>(in_original);
+    std::tie(regressions10, scores10) = cv::gapi::infer<custom::MTCNNProposal_57x32>(in10_tr);
     currentScale = 0.029719301394922563;
     cv::GArray<custom::Face> faces10 = custom::BuildFaces::on(scores10, regressions10, currentScale, tmcnnp_conf_thresh);
     cv::GArray<custom::Face> nms_p_faces10 = custom::RunNMS::on(faces10, 0.5f, false);
     //40x22
-    //cv::GMat in11 = cv::gapi::resize(in_original, cv::Size(40, 22));
+    cv::GMat in11 = cv::gapi::resize(in_originalRGB, cv::Size(40, 22));
+    cv::GMat in11_tr = custom::Transpose::on(in11);
     cv::GMat regressions11, scores11;
-    std::tie(regressions11, scores11) = cv::gapi::infer<custom::MTCNNProposal_40x22>(in_original);
+    std::tie(regressions11, scores11) = cv::gapi::infer<custom::MTCNNProposal_40x22>(in11_tr);
     currentScale = 0.021070984689000097;
     cv::GArray<custom::Face> faces11 = custom::BuildFaces::on(scores11, regressions11, currentScale, tmcnnp_conf_thresh);
     cv::GArray<custom::Face> nms_p_faces11 = custom::RunNMS::on(faces11, 0.5f, false);
     //28x16
-    //cv::GMat in12 = cv::gapi::resize(in_original, cv::Size(28, 16));
+    cv::GMat in12 = cv::gapi::resize(in_originalRGB, cv::Size(28, 16));
+    cv::GMat in12_tr = custom::Transpose::on(in12);
     cv::GMat regressions12, scores12;
-    std::tie(regressions12, scores12) = cv::gapi::infer<custom::MTCNNProposal_28x16>(in_original);
+    std::tie(regressions12, scores12) = cv::gapi::infer<custom::MTCNNProposal_28x16>(in12_tr);
     currentScale = 0.014939328144501067;
     cv::GArray<custom::Face> faces12 = custom::BuildFaces::on(scores12, regressions12, currentScale, tmcnnp_conf_thresh);
     cv::GArray<custom::Face> nms_p_faces12 = custom::RunNMS::on(faces12, 0.5f, false);
@@ -782,8 +822,10 @@ int main(int argc, char* argv[])
                                                                                  nms_p_faces10,
                                                                                  nms_p_faces11,
                                                                                  nms_p_faces12);
+#endif
 
     //Proposal post-processing
+    //cv::GArray<custom::Face> nms07_p_faces_total = custom::RunNMS::on(nms_p_faces0, 0.7f, false);
     cv::GArray<custom::Face> nms07_p_faces_total = custom::RunNMS::on(nms_p_faces_total, 0.7f, false);
     cv::GArray<custom::Face> final_p_faces_for_bb2squares = custom::ApplyRegression::on(nms07_p_faces_total, false);
     cv::GArray<custom::Face> final_faces_pnet = custom::BBoxesToSquares::on(final_p_faces_for_bb2squares);
@@ -791,7 +833,9 @@ int main(int argc, char* argv[])
     //Refinement part of MTCNN graph
     cv::GArray<cv::Rect> faces_roi_pnet = custom::R_O_NetPreProcGetROIs::on(final_faces_pnet);
     cv::GArray<cv::GMat> regressionsRNet, scoresRNet;
-    std::tie(regressionsRNet, scoresRNet) = cv::gapi::infer<custom::MTCNNRefinement>(faces_roi_pnet, in_original);
+    cv::GMat inRnet_transposed = custom::Transpose::on(in_originalRGB);
+    std::tie(regressionsRNet, scoresRNet) = cv::gapi::infer<custom::MTCNNRefinement>(faces_roi_pnet, inRnet_transposed);
+    //std::tie(regressionsRNet, scoresRNet) = cv::gapi::infer<custom::MTCNNRefinement>(faces_roi_pnet, in_originalRGB);
 
     //Refinement post-processing
     cv::GArray<custom::Face> rnet_post_proc_faces = custom::RNetPostProc::on(final_faces_pnet, scoresRNet, regressionsRNet, tmcnnr_conf_thresh);
@@ -802,7 +846,8 @@ int main(int argc, char* argv[])
     //Output part of MTCNN graph
     cv::GArray<cv::Rect> faces_roi_rnet = custom::R_O_NetPreProcGetROIs::on(final_faces_rnet);
     cv::GArray<cv::GMat> regressionsONet, scoresONet, landmarksONet;
-    std::tie(regressionsONet, landmarksONet, scoresONet) = cv::gapi::infer<custom::MTCNNOutput>(faces_roi_rnet, in_original);
+    cv::GMat inOnet_transposed = custom::Transpose::on(in_originalRGB);
+    std::tie(regressionsONet, landmarksONet, scoresONet) = cv::gapi::infer<custom::MTCNNOutput>(faces_roi_rnet, inOnet_transposed);
 
     //Output post-processing
     cv::GArray<custom::Face> onet_post_proc_faces = custom::ONetPostProc::on(final_faces_rnet, scoresONet, regressionsONet, landmarksONet, tmcnno_conf_thresh);
