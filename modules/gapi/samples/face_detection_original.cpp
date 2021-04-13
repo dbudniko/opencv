@@ -617,8 +617,7 @@ namespace custom {
         GAPI_OCV_KERNEL(OCVTranspose, Transpose) {
             static void run(const cv::Mat &in_mat,
                 cv::Mat &out_mat) {
-                in_mat.copyTo(out_mat);
-                out_mat = out_mat.t();
+                cv::transpose(in_mat, out_mat);
             }
         };// GAPI_OCV_KERNEL(Transpose)
     } // anonymous namespace
