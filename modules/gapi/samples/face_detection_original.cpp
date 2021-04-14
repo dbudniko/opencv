@@ -758,7 +758,7 @@ int main(int argc, char* argv[])
     cv::GMat regressions[PYRAMID_LEVELS];
     cv::GMat scores[PYRAMID_LEVELS];
     //cv::GArray<custom::Face> faces[PYRAMID_LEVELS];
-    //cv::GArray<custom::Face> nms_p_faces[PYRAMID_LEVELS];
+    cv::GArray<custom::Face> nms_p_faces[PYRAMID_LEVELS];
 
     cv::GMat in_originalBGR;
     cv::GMat in_originalRGB = cv::gapi::BGR2RGB(in_originalBGR);
@@ -772,11 +772,23 @@ int main(int argc, char* argv[])
         in_transposed[i] = custom::Transpose::on(in_resized[i]);
         std::tie(regressions[i], scores[i]) = run_mtcnn_p(in_transposed[i], "MTCNNProposal_" + std::to_string(level_size[i].width) + "x" + std::to_string(level_size[i].height));
         cv::GArray<custom::Face> faces = custom::BuildFaces::on(scores[i], regressions[i], scales[i], tmcnnp_conf_thresh);
-        cv::GArray<custom::Face> nms_p_faces = custom::RunNMS::on(faces, 0.5f, false);
-        total_faces = custom::AttachPyramidOutput::on(faces);
+        nms_p_faces[i] = custom::RunNMS::on(faces, 0.5f, false);
     }
+    cv::GArray<custom::Face> nms_p_faces_total = custom::MergePyramidOutputs::on(nms_p_faces[0],
+        nms_p_faces[1],
+        nms_p_faces[2],
+        nms_p_faces[3],
+        nms_p_faces[4],
+        nms_p_faces[5],
+        nms_p_faces[6],
+        nms_p_faces[7],
+        nms_p_faces[8],
+        nms_p_faces[9],
+        nms_p_faces[10],
+        nms_p_faces[11],
+        nms_p_faces[12]);
     //Proposal post-processing
-    cv::GArray<custom::Face> nms07_p_faces_total = custom::RunNMS::on(total_faces, 0.7f, false);
+    cv::GArray<custom::Face> nms07_p_faces_total = custom::RunNMS::on(nms_p_faces_total, 0.7f, false);
 #else
     //TODO: replace with generic infer PNet
     //1777x1000
@@ -933,6 +945,51 @@ int main(int argc, char* argv[])
     //cv::GComputation graph_mtcnn(cv::GIn(in_originalBGR), cv::GOut(cv::gapi::copy(in_originalBGR), final_faces_pnet));
 
     // MTCNN Proposal detection network
+#if 0
+    std::vector<cv::gapi::ie::Params<cv::gapi::Generic>> mtcnnp_net;
+    for (int i = 0; i < PYRAMID_LEVELS; ++i)
+    {
+        std::string net_id = "MTCNNProposal_" + std::to_string(level_size[i].width) + "x" + std::to_string(level_size[i].height);
+        std::vector<size_t> reshape_dims = { 1, 3, (size_t)level_size[i].width, (size_t)level_size[i].height };
+        mtcnnp_net.push_back(cv::gapi::ie::Params<cv::gapi::Generic>{
+            tmcnnp_model_path,                // path to topology IR
+            weights_path(tmcnnp_model_path),  // path to weights
+            tmcnnp_target_dev,                // device specifier
+        }.cfgInputReshape({ {"data", reshape_dims} }));
+    }
+    // MTCNN Refinement detection network
+    std::vector<size_t> reshape_dims_24x24 = { 1, 3, 24, 24 };
+    auto mtcnnr_net = cv::gapi::ie::Params<custom::MTCNNRefinement>{
+        tmcnnr_model_path,                // path to topology IR
+        weights_path(tmcnnr_model_path),  // path to weights
+        tmcnnr_target_dev,                // device specifier
+    }.cfgOutputLayers({ "conv5-2", "prob1" }).cfgInputLayers({ "data" });
+
+    // MTCNN Output detection network
+    std::vector<size_t> reshape_dims_48x48 = { 1, 3, 48, 48 };
+    auto mtcnno_net = cv::gapi::ie::Params<custom::MTCNNOutput>{
+        tmcnno_model_path,                // path to topology IR
+        weights_path(tmcnno_model_path),  // path to weights
+        tmcnno_target_dev,                // device specifier
+    }.cfgOutputLayers({ "conv6-2", "conv6-3", "prob1" }).cfgInputLayers({ "data" });
+
+    auto networks_mtcnn = cv::gapi::networks(
+        mtcnnp_net[0]
+        , mtcnnp_net[1]
+        , mtcnnp_net[2]
+        , mtcnnp_net[3]
+        , mtcnnp_net[4]
+        , mtcnnp_net[5]
+        , mtcnnp_net[6]
+        , mtcnnp_net[7]
+        , mtcnnp_net[8]
+        , mtcnnp_net[9]
+        , mtcnnp_net[10]
+        , mtcnnp_net[11]
+        , mtcnnp_net[12]
+        , mtcnnr_net
+        , mtcnno_net);
+#else
     //std::vector<size_t> reshape_dims_1777_1000 = { 1, 3, 1000, 1777 };
     std::vector<size_t> reshape_dims_1777_1000 = { 1, 3, 1777, 1000 };
     auto mtcnnp_net_1777x1000 = cv::gapi::ie::Params<custom::MTCNNProposal_1777x1000>{
@@ -1068,6 +1125,8 @@ int main(int argc, char* argv[])
         , mtcnnp_net_28x16
         , mtcnnr_net
         , mtcnno_net);
+#endif
+
 
     auto kernels_mtcnn = cv::gapi::kernels< custom::OCVBuildFaces
         , custom::OCVRunNMS
