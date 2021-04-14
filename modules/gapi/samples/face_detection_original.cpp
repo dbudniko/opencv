@@ -158,6 +158,8 @@ namespace custom {
 
         const float P_NET_WINDOW_SIZE = 12.f;
         const int P_NET_STRIDE = 2;
+        const int IMAGE_WIDTH = 1920;
+        const int IMAGE_HEIGHT = 1080;
 
         std::vector<Face> buildFaces(const cv::Mat& scores,
             const cv::Mat& regressions,
@@ -335,6 +337,17 @@ namespace custom {
             }
         };
 
+
+        G_API_OP(AttachPyramidOutput,
+            <GFaces(GFaces)>,
+            "sample.custom.mtcnn.merge_attach_pyramid_output") {
+            static cv::GArrayDesc outMeta(const cv::GArrayDesc&
+            ) {
+                return cv::empty_array_desc();
+            }
+        };
+
+
         G_API_OP(ApplyRegression,
             <GFaces(GFaces, bool)>,
             "sample.custom.mtcnn.apply_regression") {
@@ -501,6 +514,16 @@ namespace custom {
             }
         };// GAPI_OCV_KERNEL(MergePyramidOutputs)
 
+        GAPI_OCV_KERNEL(OCVAttachPyramidOutput, AttachPyramidOutput) {
+            static void run(const std::vector<Face> &in_faces,
+                std::vector<Face> &out_faces) {
+                if (!in_faces.empty()) {
+                    out_faces.insert(out_faces.end(), in_faces.begin(), in_faces.end());
+                }
+                std::cout << "OCVAttachPyramidOutput!!! output faces number " << out_faces.size() << std::endl;
+            }
+        };// GAPI_OCV_KERNEL(MergePyramidOutputs)
+
         GAPI_OCV_KERNEL(OCVApplyRegression, ApplyRegression) {
             static void run(const std::vector<Face> &in_faces,
                 bool addOne,
@@ -538,8 +561,8 @@ namespace custom {
                 outs.clear();
                 for (auto& f : in_faces) {
                     cv::Rect tmp_rect = f.bbox.getRect();
-                    if (tmp_rect.x + tmp_rect.width >= 1080) tmp_rect.width = 1080 - tmp_rect.x - 4;
-                    if (tmp_rect.y + tmp_rect.height >= 1920) tmp_rect.height = 1920 - tmp_rect.y - 4;
+                    if (tmp_rect.x + tmp_rect.width >= IMAGE_HEIGHT) tmp_rect.width = IMAGE_HEIGHT - tmp_rect.x - 4;
+                    if (tmp_rect.y + tmp_rect.height >= IMAGE_WIDTH) tmp_rect.height = IMAGE_WIDTH - tmp_rect.y - 4;
                     outs.push_back(tmp_rect);
                     //outs.push_back(f.bbox.getRect());
                 }
@@ -683,7 +706,19 @@ static cv::Mat drawRectsAndPoints(const cv::Mat& img,
 }
 
 
-const float P_NET_WINDOW_SIZE = 12.f;
+std::tuple<cv::GMat, cv::GMat> run_mtcnn_p(cv::GMat in, std::string id) {
+    cv::GInferInputs inputs;
+    inputs["data"] = in;
+    //auto id = "net" + sz;
+    auto outputs = cv::gapi::infer<cv::gapi::Generic>(id, inputs);
+    auto regressions = outputs.at("conv4-2");
+    auto scores = outputs.at("prob1");
+    return std::make_tuple(regressions, scores);
+}
+
+//const float P_NET_WINDOW_SIZE = 12.f;
+const int PYRAMID_LEVELS = 13;
+
 int main(int argc, char* argv[])
 {
     cv::CommandLineParser cmd(argc, argv, keys);
@@ -703,11 +738,46 @@ int main(int argc, char* argv[])
     const auto tmcnno_target_dev = cmd.get<std::string>("mtcnnod");
     const auto tmcnno_conf_thresh = cmd.get<double>("thro");
 
+    cv::Size level_size[PYRAMID_LEVELS] =
+    {
+        {1777, 1000},  {1260, 709}, {893, 502}, {633, 356},
+        {449, 252}, {318, 179}, {225, 127}, {160, 90},
+        {113, 63}, {80, 45}, {57, 32}, {40, 22}, {28, 16}
+    };
+    float scales[PYRAMID_LEVELS]
+    {
+        0.9259259259259259f, 0.6564814814814814f, 0.4654453703703703f,
+        0.3300007675925925f, 0.23397054422314809f, 0.165885115854212f,
+        0.1176125471406363f, 0.08338729592271113f, 0.059121592809202185f,
+        0.041917209301724344f, 0.029719301394922563f, 0.021070984689000097f,
+        0.014939328144501067f
+    };
 
-    //Proposal part of MTCNN graph
-    //Preprocessing BGR2RGB + transpose (NCWH is expected instead of NCHW)
+    cv::GMat in_resized[PYRAMID_LEVELS];
+    cv::GMat in_transposed[PYRAMID_LEVELS];
+    cv::GMat regressions[PYRAMID_LEVELS];
+    cv::GMat scores[PYRAMID_LEVELS];
+    //cv::GArray<custom::Face> faces[PYRAMID_LEVELS];
+    //cv::GArray<custom::Face> nms_p_faces[PYRAMID_LEVELS];
+
     cv::GMat in_originalBGR;
     cv::GMat in_originalRGB = cv::gapi::BGR2RGB(in_originalBGR);
+    //Proposal part of MTCNN graph
+    //Preprocessing BGR2RGB + transpose (NCWH is expected instead of NCHW)
+#if 0
+    cv::GArray<custom::Face> total_faces;
+    for (int i = 0; i < PYRAMID_LEVELS; ++i)
+    {
+        in_resized[i] = cv::gapi::resize(in_originalRGB, level_size[i]);
+        in_transposed[i] = custom::Transpose::on(in_resized[i]);
+        std::tie(regressions[i], scores[i]) = run_mtcnn_p(in_transposed[i], "MTCNNProposal_" + std::to_string(level_size[i].width) + "x" + std::to_string(level_size[i].height));
+        cv::GArray<custom::Face> faces = custom::BuildFaces::on(scores[i], regressions[i], scales[i], tmcnnp_conf_thresh);
+        cv::GArray<custom::Face> nms_p_faces = custom::RunNMS::on(faces, 0.5f, false);
+        total_faces = custom::AttachPyramidOutput::on(faces);
+    }
+    //Proposal post-processing
+    cv::GArray<custom::Face> nms07_p_faces_total = custom::RunNMS::on(total_faces, 0.7f, false);
+#else
     //TODO: replace with generic infer PNet
     //1777x1000
     cv::GMat in0 = cv::gapi::resize(in_originalRGB, cv::Size(1777, 1000));
@@ -717,7 +787,6 @@ int main(int argc, char* argv[])
     float currentScale = 0.9259259259259259f;
     cv::GArray<custom::Face> faces0 = custom::BuildFaces::on(scores0, regressions0, currentScale, tmcnnp_conf_thresh);
     cv::GArray<custom::Face> nms_p_faces0 = custom::RunNMS::on(faces0, 0.5f, false);
-#if 1
     //1260x709
     cv::GMat in1 = cv::gapi::resize(in_originalRGB, cv::Size(1260, 709));
     cv::GMat in1_tr = custom::Transpose::on(in1);
@@ -828,11 +897,9 @@ int main(int argc, char* argv[])
                                                                                  nms_p_faces10,
                                                                                  nms_p_faces11,
                                                                                  nms_p_faces12);
-#endif
-
     //Proposal post-processing
-    //cv::GArray<custom::Face> nms07_p_faces_total = custom::RunNMS::on(nms_p_faces0, 0.7f, false);
     cv::GArray<custom::Face> nms07_p_faces_total = custom::RunNMS::on(nms_p_faces_total, 0.7f, false);
+#endif
     cv::GArray<custom::Face> final_p_faces_for_bb2squares = custom::ApplyRegression::on(nms07_p_faces_total, false);
     cv::GArray<custom::Face> final_faces_pnet = custom::BBoxesToSquares::on(final_p_faces_for_bb2squares);
 
@@ -864,7 +931,6 @@ int main(int argc, char* argv[])
     cv::GComputation graph_mtcnn(cv::GIn(in_originalBGR), cv::GOut(cv::gapi::copy(in_originalBGR), final_faces_onet));
     //cv::GComputation graph_mtcnn(cv::GIn(in_originalBGR), cv::GOut(cv::gapi::copy(in_originalBGR), final_faces_rnet));
     //cv::GComputation graph_mtcnn(cv::GIn(in_originalBGR), cv::GOut(cv::gapi::copy(in_originalBGR), final_faces_pnet));
-
 
     // MTCNN Proposal detection network
     //std::vector<size_t> reshape_dims_1777_1000 = { 1, 3, 1000, 1777 };
@@ -1006,6 +1072,7 @@ int main(int argc, char* argv[])
     auto kernels_mtcnn = cv::gapi::kernels< custom::OCVBuildFaces
         , custom::OCVRunNMS
         , custom::OCVMergePyramidOutputs
+        , custom::OCVAttachPyramidOutput
         , custom::OCVApplyRegression
         , custom::OCVBBoxesToSquares
         , custom::OCVR_O_NetPreProcGetROIs
@@ -1020,7 +1087,17 @@ int main(int argc, char* argv[])
     std::cout << "Reading " << input_file_name << std::endl;
 #if 1
     // Input image
-    auto in_src = cv::imread(input_file_name);
+    auto in_original = cv::imread(input_file_name);
+    cv::Mat in_src;
+    if (in_original.cols != custom::IMAGE_WIDTH || in_original.rows != custom::IMAGE_HEIGHT)
+    {
+       cv::resize(in_original, in_src, cv::Size(custom::IMAGE_WIDTH, custom::IMAGE_HEIGHT));
+    }
+    else
+    {
+        in_original.copyTo(in_src);
+    }
+
     cv::Mat image;
     std::vector<custom::Face> out_faces;
     auto graph_mtcnn_compiled = graph_mtcnn.compile(descr_of(gin(in_src)), cv::compile_args(networks_mtcnn, kernels_mtcnn));
@@ -1050,7 +1127,7 @@ int main(int argc, char* argv[])
     auto in_src = cv::gapi::wip::make_src<cv::gapi::wip::GCaptureSource>(input_file_name);
 
     // Text recognition input size (also an input parameter to the graph)
-    auto in_rsz = cv::Size{ 1920, 1080 };
+    auto in_rsz = cv::Size{ custom::IMAGE_WIDTH, custom::IMAGE_HEIGHT };
 
     // Set the pipeline source & start the pipeline
     pipeline_mtcnn.setSource(cv::gin(in_src, in_rsz));
@@ -1066,12 +1143,28 @@ int main(int argc, char* argv[])
     while (pipeline_mtcnn.pull(cv::gout(image, out_faces))) {
         frames++;
         std::cout << "Final Faces Size " << out_faces.size() << std::endl;
+        std::vector<rectPoints> data;
+        // show the image with faces in it
+        for (size_t i = 0; i < out_faces.size(); ++i) {
+            std::vector<cv::Point> pts;
+            for (int p = 0; p < NUM_PTS; ++p) {
+                pts.push_back(
+                    cv::Point(out_faces[i].ptsCoords[2 * p], out_faces[i].ptsCoords[2 * p + 1]));
+            }
+
+            auto rect = out_faces[i].bbox.getRect();
+            auto d = std::make_pair(rect, pts);
+            data.push_back(d);
+        }
         // Visualize results on the frame
-        for (auto&& rc : out_faces) vis::bbox(image, rc.bbox.getRect());
+        //for (auto&& rc : out_faces) vis::bbox(image, rc.bbox.getRect());
+        auto resultImg = drawRectsAndPoints(image, data);
         tm.stop();
         const auto fps_str = std::to_string(frames / tm.getTimeSec()) + " FPS";
-        cv::putText(image, fps_str, { 0,32 }, cv::FONT_HERSHEY_SIMPLEX, 1.0, { 0,255,0 }, 2);
-        cv::imshow("Out", image);
+        //cv::putText(image, fps_str, { 0,32 }, cv::FONT_HERSHEY_SIMPLEX, 1.0, { 0,255,0 }, 2);
+        //cv::imshow("Out", image);
+        cv::putText(resultImg, fps_str, { 0,32 }, cv::FONT_HERSHEY_SIMPLEX, 1.0, { 0,255,0 }, 2);
+        cv::imshow("Out", resultImg);
         cv::waitKey(1);
         out_faces.clear();
         tm.start();
