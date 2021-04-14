@@ -673,6 +673,7 @@ static cv::Mat drawRectsAndPoints(const cv::Mat& img,
     for (auto& d : data) {
         //cv::rectangle(outImg, d.first, cv::Scalar(0, 0, 255));
         vis::bbox(outImg, d.first);
+        std::cout << "drawRectsAndPoints!!!  " << d.first.x << " " << d.first.y << "  " << d.first.x +d.first.width << " " << d.first.y + d.first.height << std::endl;
         auto pts = d.second;
         for (size_t i = 0; i < pts.size(); ++i) {
             cv::circle(outImg, pts[i], 5, cv::Scalar(0, 255, 255), 2);
