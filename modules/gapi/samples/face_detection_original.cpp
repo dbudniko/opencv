@@ -667,7 +667,8 @@ static cv::Mat drawRectsAndPoints(const cv::Mat& img,
     img.convertTo(outImg, CV_8UC3);
 
     for (auto& d : data) {
-        cv::rectangle(outImg, d.first, cv::Scalar(0, 0, 255));
+        //cv::rectangle(outImg, d.first, cv::Scalar(0, 0, 255));
+        vis::bbox(outImg, d.first);
         auto pts = d.second;
         for (size_t i = 0; i < pts.size(); ++i) {
             cv::circle(outImg, pts[i], 3, cv::Scalar(0, 0, 255));
@@ -1035,9 +1036,9 @@ int main(int argc, char* argv[])
         data.push_back(d);
     }
     auto resultImg = drawRectsAndPoints(image, data);
-    //cv::imshow("Out", resultImg);
-    for (auto&& rc : out_faces) vis::bbox(image, rc.bbox.getRect());
-    cv::imshow("Out", image);
+    cv::imshow("Out", resultImg);
+    //for (auto&& rc : out_faces) vis::bbox(image, rc.bbox.getRect());
+    //cv::imshow("Out", image);
     cv::waitKey(-1);
 #else
     // Input stream
