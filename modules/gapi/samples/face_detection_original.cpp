@@ -631,6 +631,9 @@ namespace custom {
                 out_faces.clear();
                 if (!in_faces_copy.empty()) {
                     for (size_t i = 0; i < in_faces_copy.size(); ++i) {
+                        std::cout << "OCVSwapFaces!!! score " << in_faces_copy[i].score << std::endl;
+                        std::cout << "OCVSwapFaces!!! regression[0] " << in_faces_copy[i].regression[0] << " regression[1] " << in_faces_copy[i].regression[1] <<
+                            " regression[2] " << in_faces_copy[i].regression[2] << " regression[3] " << in_faces_copy[i].regression[3] << std::endl;
                         std::swap(in_faces_copy[i].bbox.x1, in_faces_copy[i].bbox.y1);
                         std::swap(in_faces_copy[i].bbox.x2, in_faces_copy[i].bbox.y2);
                         for (int p = 0; p < NUM_PTS; ++p) {
