@@ -598,10 +598,11 @@ namespace custom {
                     const float* scores_data = (float*)in_scores[k].data;
                     const float* reg_data = (float*)in_regresssions[k].data;
                     const float* landmark_data = (float*)in_landmarks[k].data;
-                    std::cout << "OCVONetPostProc!!! scores_data[0] " << scores_data[0] << " scores_data[1] " << scores_data[1] << std::endl;
-                    std::cout << "OCVONetPostProc!!! reg_data[0] " << reg_data[0] << " reg_data[1] " << reg_data[1] <<
-                        "reg_data[2] " << reg_data[2] << " reg_data[3] " << reg_data[3] << std::endl;
                     if (scores_data[1] >= threshold) {
+                       std::cout << "OCVONetPostProc!!! scores_data[0] " << scores_data[0] << " scores_data[1] " << scores_data[1] << std::endl;
+                       std::cout << "OCVONetPostProc!!! reg_data[0] " << reg_data[0] << " reg_data[1] " << reg_data[1] <<
+                                     " reg_data[2] " << reg_data[2] << " reg_data[3] " << reg_data[3] << std::endl;
+
                         Face info = in_faces[k];
                         info.score = scores_data[1];
                         for (int i = 0; i < 4; ++i) {
@@ -671,7 +672,7 @@ static cv::Mat drawRectsAndPoints(const cv::Mat& img,
         vis::bbox(outImg, d.first);
         auto pts = d.second;
         for (size_t i = 0; i < pts.size(); ++i) {
-            cv::circle(outImg, pts[i], 3, cv::Scalar(0, 0, 255));
+            cv::circle(outImg, pts[i], 5, cv::Scalar(0, 255, 255), 2);
         }
     }
     return outImg;
