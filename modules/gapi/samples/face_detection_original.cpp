@@ -706,7 +706,7 @@ static cv::Mat drawRectsAndPoints(const cv::Mat& img,
 }
 
 
-std::tuple<cv::GMat, cv::GMat> run_mtcnn_p(cv::GMat in, std::string id) {
+static std::tuple<cv::GMat, cv::GMat> run_mtcnn_p(cv::GMat in, std::string id) {
     cv::GInferInputs inputs;
     inputs["data"] = in;
     //auto id = "net" + sz;
