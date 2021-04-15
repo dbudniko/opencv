@@ -778,13 +778,6 @@ int main(int argc, char* argv[])
         , mtcnnp_net[3]
         , mtcnnp_net[4]
         , mtcnnp_net[5]
-        , mtcnnp_net[6]
-        , mtcnnp_net[7]
-        , mtcnnp_net[8]
-        , mtcnnp_net[9]
-        , mtcnnp_net[10]
-        , mtcnnp_net[11]
-        , mtcnnp_net[12]
         , mtcnnr_net
         , mtcnno_net);
 
