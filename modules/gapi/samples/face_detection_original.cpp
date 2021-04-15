@@ -160,6 +160,8 @@ namespace custom {
         const int P_NET_STRIDE = 2;
         const int IMAGE_WIDTH = 1920;
         const int IMAGE_HEIGHT = 1080;
+        const int TRANSPOSED_IMAGE_WIDTH = 1080;
+        const int TRANSPOSED_IMAGE_HEIGHT = 1920;
 
         std::vector<Face> buildFaces(const cv::Mat& scores,
             const cv::Mat& regressions,
@@ -337,17 +339,6 @@ namespace custom {
             }
         };
 
-
-        G_API_OP(AttachPyramidOutput,
-            <GFaces(GFaces)>,
-            "sample.custom.mtcnn.merge_attach_pyramid_output") {
-            static cv::GArrayDesc outMeta(const cv::GArrayDesc&
-            ) {
-                return cv::empty_array_desc();
-            }
-        };
-
-
         G_API_OP(ApplyRegression,
             <GFaces(GFaces, bool)>,
             "sample.custom.mtcnn.apply_regression") {
@@ -415,12 +406,6 @@ namespace custom {
             "sample.custom.mtcnn.transpose") {
             static cv::GMatDesc outMeta(const cv::GMatDesc in
             ) {
-                //cv::GMatDesc out = in;
-                //cv::Size tmp_size;
-                //tmp_size.height = in.size.width;
-                //tmp_size.width = in.size.height;
-                //out.size = tmp_size;
-                // out;
                 const cv::GMatDesc out_desc = { in.depth, in.chan, cv::Size(in.size.height,
                                                                      in.size.width) };
                 return out_desc;
@@ -514,16 +499,6 @@ namespace custom {
             }
         };// GAPI_OCV_KERNEL(MergePyramidOutputs)
 
-        GAPI_OCV_KERNEL(OCVAttachPyramidOutput, AttachPyramidOutput) {
-            static void run(const std::vector<Face> &in_faces,
-                std::vector<Face> &out_faces) {
-                if (!in_faces.empty()) {
-                    out_faces.insert(out_faces.end(), in_faces.begin(), in_faces.end());
-                }
-                std::cout << "OCVAttachPyramidOutput!!! output faces number " << out_faces.size() << std::endl;
-            }
-        };// GAPI_OCV_KERNEL(MergePyramidOutputs)
-
         GAPI_OCV_KERNEL(OCVApplyRegression, ApplyRegression) {
             static void run(const std::vector<Face> &in_faces,
                 bool addOne,
@@ -539,7 +514,6 @@ namespace custom {
             }
         };// GAPI_OCV_KERNEL(ApplyRegression)
 
-
         GAPI_OCV_KERNEL(OCVBBoxesToSquares, BBoxesToSquares) {
             static void run(const std::vector<Face> &in_faces,
                 std::vector<Face> &out_faces) {
@@ -554,15 +528,14 @@ namespace custom {
             }
         };// GAPI_OCV_KERNEL(BBoxesToSquares)
 
-
         GAPI_OCV_KERNEL(OCVR_O_NetPreProcGetROIs, R_O_NetPreProcGetROIs) {
             static void run(const std::vector<Face> &in_faces,
                 std::vector<cv::Rect> &outs) {
                 outs.clear();
                 for (auto& f : in_faces) {
                     cv::Rect tmp_rect = f.bbox.getRect();
-                    if (tmp_rect.x + tmp_rect.width >= IMAGE_HEIGHT) tmp_rect.width = IMAGE_HEIGHT - tmp_rect.x - 4;
-                    if (tmp_rect.y + tmp_rect.height >= IMAGE_WIDTH) tmp_rect.height = IMAGE_WIDTH - tmp_rect.y - 4;
+                    if (tmp_rect.x + tmp_rect.width >= TRANSPOSED_IMAGE_WIDTH) tmp_rect.width = TRANSPOSED_IMAGE_WIDTH - tmp_rect.x - 4;
+                    if (tmp_rect.y + tmp_rect.height >= TRANSPOSED_IMAGE_HEIGHT) tmp_rect.height = TRANSPOSED_IMAGE_HEIGHT - tmp_rect.y - 4;
                     outs.push_back(tmp_rect);
                     //outs.push_back(f.bbox.getRect());
                 }
@@ -699,7 +672,7 @@ static cv::Mat drawRectsAndPoints(const cv::Mat& img,
         std::cout << "drawRectsAndPoints!!!  " << d.first.x << " " << d.first.y << "  " << d.first.x +d.first.width << " " << d.first.y + d.first.height << std::endl;
         auto pts = d.second;
         for (size_t i = 0; i < pts.size(); ++i) {
-            cv::circle(outImg, pts[i], 5, cv::Scalar(0, 255, 255), 2);
+            cv::circle(outImg, pts[i], 3, cv::Scalar(0, 255, 255), 1);
         }
     }
     return outImg;
@@ -710,13 +683,13 @@ static std::tuple<cv::GMat, cv::GMat> run_mtcnn_p(cv::GMat in, std::string id) {
     cv::GInferInputs inputs;
     inputs["data"] = in;
     //auto id = "net" + sz;
+    std::cout << "run_mtcnn_p " << id << std::endl;
     auto outputs = cv::gapi::infer<cv::gapi::Generic>(id, inputs);
     auto regressions = outputs.at("conv4-2");
     auto scores = outputs.at("prob1");
     return std::make_tuple(regressions, scores);
 }
 
-//const float P_NET_WINDOW_SIZE = 12.f;
 const int PYRAMID_LEVELS = 13;
 
 int main(int argc, char* argv[])
@@ -738,6 +711,12 @@ int main(int argc, char* argv[])
     const auto tmcnno_target_dev = cmd.get<std::string>("mtcnnod");
     const auto tmcnno_conf_thresh = cmd.get<double>("thro");
 
+
+    cv::GMat in_originalBGR;
+    cv::GMat in_originalRGB = cv::gapi::BGR2RGB(in_originalBGR);
+    //Proposal part of MTCNN graph
+    //Preprocessing BGR2RGB + transpose (NCWH is expected instead of NCHW)
+#if 0
     cv::Size level_size[PYRAMID_LEVELS] =
     {
         {1777, 1000},  {1260, 709}, {893, 502}, {633, 356},
@@ -759,12 +738,6 @@ int main(int argc, char* argv[])
     cv::GMat scores[PYRAMID_LEVELS];
     //cv::GArray<custom::Face> faces[PYRAMID_LEVELS];
     cv::GArray<custom::Face> nms_p_faces[PYRAMID_LEVELS];
-
-    cv::GMat in_originalBGR;
-    cv::GMat in_originalRGB = cv::gapi::BGR2RGB(in_originalBGR);
-    //Proposal part of MTCNN graph
-    //Preprocessing BGR2RGB + transpose (NCWH is expected instead of NCHW)
-#if 0
     cv::GArray<custom::Face> total_faces;
     for (int i = 0; i < PYRAMID_LEVELS; ++i)
     {
@@ -918,8 +891,8 @@ int main(int argc, char* argv[])
     //Refinement part of MTCNN graph
     cv::GArray<cv::Rect> faces_roi_pnet = custom::R_O_NetPreProcGetROIs::on(final_faces_pnet);
     cv::GArray<cv::GMat> regressionsRNet, scoresRNet;
-    cv::GMat inRnet_transposed = custom::Transpose::on(in_originalRGB);
-    std::tie(regressionsRNet, scoresRNet) = cv::gapi::infer<custom::MTCNNRefinement>(faces_roi_pnet, inRnet_transposed);
+    cv::GMat in_originalRGB_transposed = custom::Transpose::on(in_originalRGB);
+    std::tie(regressionsRNet, scoresRNet) = cv::gapi::infer<custom::MTCNNRefinement>(faces_roi_pnet, in_originalRGB_transposed);
     //std::tie(regressionsRNet, scoresRNet) = cv::gapi::infer<custom::MTCNNRefinement>(faces_roi_pnet, in_originalRGB);
 
     //Refinement post-processing
@@ -931,8 +904,7 @@ int main(int argc, char* argv[])
     //Output part of MTCNN graph
     cv::GArray<cv::Rect> faces_roi_rnet = custom::R_O_NetPreProcGetROIs::on(final_faces_rnet);
     cv::GArray<cv::GMat> regressionsONet, scoresONet, landmarksONet;
-    cv::GMat inOnet_transposed = custom::Transpose::on(in_originalRGB);
-    std::tie(regressionsONet, landmarksONet, scoresONet) = cv::gapi::infer<custom::MTCNNOutput>(faces_roi_rnet, inOnet_transposed);
+    std::tie(regressionsONet, landmarksONet, scoresONet) = cv::gapi::infer<custom::MTCNNOutput>(faces_roi_rnet, in_originalRGB_transposed);
 
     //Output post-processing
     cv::GArray<custom::Face> onet_post_proc_faces = custom::ONetPostProc::on(final_faces_rnet, scoresONet, regressionsONet, landmarksONet, tmcnno_conf_thresh);
@@ -950,8 +922,10 @@ int main(int argc, char* argv[])
     for (int i = 0; i < PYRAMID_LEVELS; ++i)
     {
         std::string net_id = "MTCNNProposal_" + std::to_string(level_size[i].width) + "x" + std::to_string(level_size[i].height);
+        std::cout << "mtcnnp_net " << net_id << std::endl;
         std::vector<size_t> reshape_dims = { 1, 3, (size_t)level_size[i].width, (size_t)level_size[i].height };
         mtcnnp_net.push_back(cv::gapi::ie::Params<cv::gapi::Generic>{
+            net_id,                           // tag
             tmcnnp_model_path,                // path to topology IR
             weights_path(tmcnnp_model_path),  // path to weights
             tmcnnp_target_dev,                // device specifier
@@ -1131,7 +1105,6 @@ int main(int argc, char* argv[])
     auto kernels_mtcnn = cv::gapi::kernels< custom::OCVBuildFaces
         , custom::OCVRunNMS
         , custom::OCVMergePyramidOutputs
-        , custom::OCVAttachPyramidOutput
         , custom::OCVApplyRegression
         , custom::OCVBBoxesToSquares
         , custom::OCVR_O_NetPreProcGetROIs
