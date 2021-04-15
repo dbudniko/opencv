@@ -771,21 +771,22 @@ int main(int argc, char* argv[])
         cv::GArray<custom::Face> tmp_faces = total_faces;
         total_faces = custom::AccumulatePyramidOutputs::on(tmp_faces, nms_p_faces[i]);
     }
-    cv::GArray<custom::Face> nms_p_faces_total = custom::MergePyramidOutputs::on(nms_p_faces[0],
-        nms_p_faces[1],
-        nms_p_faces[2],
-        nms_p_faces[3],
-        nms_p_faces[4],
-        nms_p_faces[5],
-        nms_p_faces[6],
-        nms_p_faces[7],
-        nms_p_faces[8],
-        nms_p_faces[9],
-        nms_p_faces[10],
-        nms_p_faces[11],
-        nms_p_faces[12]);
+    //cv::GArray<custom::Face> nms_p_faces_total = custom::MergePyramidOutputs::on(nms_p_faces[0],
+    //    nms_p_faces[1],
+    //    nms_p_faces[2],
+    //    nms_p_faces[3],
+    //    nms_p_faces[4],
+    //    nms_p_faces[5],
+    //    nms_p_faces[6],
+    //    nms_p_faces[7],
+    //    nms_p_faces[8],
+    //    nms_p_faces[9],
+    //    nms_p_faces[10],
+    //    nms_p_faces[11],
+    //    nms_p_faces[12]);
     //Proposal post-processing
-    cv::GArray<custom::Face> nms07_p_faces_total = custom::RunNMS::on(nms_p_faces_total, 0.7f, false);
+    //cv::GArray<custom::Face> nms07_p_faces_total = custom::RunNMS::on(nms_p_faces_total, 0.7f, false);
+    cv::GArray<custom::Face> nms07_p_faces_total = custom::RunNMS::on(total_faces, 0.7f, false);
     cv::GArray<custom::Face> final_p_faces_for_bb2squares = custom::ApplyRegression::on(nms07_p_faces_total, false);
     cv::GArray<custom::Face> final_faces_pnet = custom::BBoxesToSquares::on(final_p_faces_for_bb2squares);
 
