@@ -339,6 +339,16 @@ namespace custom {
             }
         };
 
+        G_API_OP(AccumulatePyramidOutputs,
+            <GFaces(GFaces, GFaces)>,
+            "sample.custom.mtcnn.merge_pyramid_outputs") {
+            static cv::GArrayDesc outMeta(const cv::GArrayDesc&,
+                const cv::GArrayDesc&
+            ) {
+                return cv::empty_array_desc();
+            }
+        };
+
         G_API_OP(ApplyRegression,
             <GFaces(GFaces, bool)>,
             "sample.custom.mtcnn.apply_regression") {
@@ -496,6 +506,16 @@ namespace custom {
                     out_faces.insert(out_faces.end(), in_faces12.begin(), in_faces12.end());
                 }
                 std::cout << "OCVMergePyramidOutputs!!! output faces number " << out_faces.size() << std::endl;
+            }
+        };// GAPI_OCV_KERNEL(MergePyramidOutputs)
+
+        GAPI_OCV_KERNEL(OCVAccumulatePyramidOutputs, AccumulatePyramidOutputs) {
+            static void run(const std::vector<Face> &total_faces,
+                const std::vector<Face> &in_faces,
+                std::vector<Face> &out_faces) {
+                out_faces = total_faces;
+                out_faces.insert(out_faces.end(), in_faces.begin(), in_faces.end());
+                std::cout << "OCVAccumulatePyramidOutputs!!! output faces number " << out_faces.size() << std::endl;
             }
         };// GAPI_OCV_KERNEL(MergePyramidOutputs)
 
@@ -716,7 +736,6 @@ int main(int argc, char* argv[])
     cv::GMat in_originalRGB = cv::gapi::BGR2RGB(in_originalBGR);
     //Proposal part of MTCNN graph
     //Preprocessing BGR2RGB + transpose (NCWH is expected instead of NCHW)
-#if 0
     cv::Size level_size[PYRAMID_LEVELS] =
     {
         {1777, 1000},  {1260, 709}, {893, 502}, {633, 356},
@@ -762,129 +781,6 @@ int main(int argc, char* argv[])
         nms_p_faces[12]);
     //Proposal post-processing
     cv::GArray<custom::Face> nms07_p_faces_total = custom::RunNMS::on(nms_p_faces_total, 0.7f, false);
-#else
-    //TODO: replace with generic infer PNet
-    //1777x1000
-    cv::GMat in0 = cv::gapi::resize(in_originalRGB, cv::Size(1777, 1000));
-    cv::GMat in0_tr = custom::Transpose::on(in0);
-    cv::GMat regressions0, scores0;
-    std::tie(regressions0, scores0) = cv::gapi::infer<custom::MTCNNProposal_1777x1000>(in0_tr);
-    float currentScale = 0.9259259259259259f;
-    cv::GArray<custom::Face> faces0 = custom::BuildFaces::on(scores0, regressions0, currentScale, tmcnnp_conf_thresh);
-    cv::GArray<custom::Face> nms_p_faces0 = custom::RunNMS::on(faces0, 0.5f, false);
-    //1260x709
-    cv::GMat in1 = cv::gapi::resize(in_originalRGB, cv::Size(1260, 709));
-    cv::GMat in1_tr = custom::Transpose::on(in1);
-    cv::GMat regressions1, scores1;
-    std::tie(regressions1, scores1) = cv::gapi::infer<custom::MTCNNProposal_1260x709>(in1_tr);
-    currentScale = 0.6564814814814814f;
-    cv::GArray<custom::Face> faces1 = custom::BuildFaces::on(scores1, regressions1, currentScale, tmcnnp_conf_thresh);
-    cv::GArray<custom::Face> nms_p_faces1 = custom::RunNMS::on(faces1, 0.5f, false);
-    //893x502
-    cv::GMat in2 = cv::gapi::resize(in_originalRGB, cv::Size(893, 502));
-    cv::GMat in2_tr = custom::Transpose::on(in2);
-    cv::GMat regressions2, scores2;
-    std::tie(regressions2, scores2) = cv::gapi::infer<custom::MTCNNProposal_893x502>(in2_tr);
-    currentScale = 0.4654453703703703;
-    cv::GArray<custom::Face> faces2 = custom::BuildFaces::on(scores2, regressions2, currentScale, tmcnnp_conf_thresh);
-    cv::GArray<custom::Face> nms_p_faces2 = custom::RunNMS::on(faces2, 0.5f, false);
-    //633x356
-    cv::GMat in3 = cv::gapi::resize(in_originalRGB, cv::Size(633, 356));
-    cv::GMat in3_tr = custom::Transpose::on(in3);
-    cv::GMat regressions3, scores3;
-    std::tie(regressions3, scores3) = cv::gapi::infer<custom::MTCNNProposal_633x356>(in3_tr);
-    currentScale = 0.3300007675925925;
-    cv::GArray<custom::Face> faces3 = custom::BuildFaces::on(scores3, regressions3, currentScale, tmcnnp_conf_thresh);
-    cv::GArray<custom::Face> nms_p_faces3 = custom::RunNMS::on(faces3, 0.5f, false);
-    //449x252
-    cv::GMat in4 = cv::gapi::resize(in_originalRGB, cv::Size(449, 252));
-    cv::GMat in4_tr = custom::Transpose::on(in4);
-    cv::GMat regressions4, scores4;
-    std::tie(regressions4, scores4) = cv::gapi::infer<custom::MTCNNProposal_449x252>(in4_tr);
-    currentScale = 0.23397054422314809;
-    cv::GArray<custom::Face> faces4 = custom::BuildFaces::on(scores4, regressions4, currentScale, tmcnnp_conf_thresh);
-    cv::GArray<custom::Face> nms_p_faces4 = custom::RunNMS::on(faces4, 0.5f, false);
-    //318x179
-    cv::GMat in5 = cv::gapi::resize(in_originalRGB, cv::Size(318, 179));
-    cv::GMat in5_tr = custom::Transpose::on(in5);
-    cv::GMat regressions5, scores5;
-    std::tie(regressions5, scores5) = cv::gapi::infer<custom::MTCNNProposal_318x179>(in5_tr);
-    currentScale = 0.165885115854212;
-    cv::GArray<custom::Face> faces5 = custom::BuildFaces::on(scores5, regressions5, currentScale, tmcnnp_conf_thresh);
-    cv::GArray<custom::Face> nms_p_faces5 = custom::RunNMS::on(faces5, 0.5f, false);
-    //225x127
-    cv::GMat in6 = cv::gapi::resize(in_originalRGB, cv::Size(225, 127));
-    cv::GMat in6_tr = custom::Transpose::on(in6);
-    cv::GMat regressions6, scores6;
-    std::tie(regressions6, scores6) = cv::gapi::infer<custom::MTCNNProposal_225x127>(in6_tr);
-    currentScale = 0.1176125471406363;
-    cv::GArray<custom::Face> faces6 = custom::BuildFaces::on(scores6, regressions6, currentScale, tmcnnp_conf_thresh);
-    cv::GArray<custom::Face> nms_p_faces6 = custom::RunNMS::on(faces6, 0.5f, false);
-    //160x90
-    cv::GMat in7 = cv::gapi::resize(in_originalRGB, cv::Size(160, 90));
-    cv::GMat in7_tr = custom::Transpose::on(in7);
-    cv::GMat regressions7, scores7;
-    std::tie(regressions7, scores7) = cv::gapi::infer<custom::MTCNNProposal_160x90>(in7_tr);
-    currentScale = 0.08338729592271113;
-    cv::GArray<custom::Face> faces7 = custom::BuildFaces::on(scores7, regressions7, currentScale, tmcnnp_conf_thresh);
-    cv::GArray<custom::Face> nms_p_faces7 = custom::RunNMS::on(faces7, 0.5f, false);
-    //113x63
-    cv::GMat in8 = cv::gapi::resize(in_originalRGB, cv::Size(113, 63));
-    cv::GMat in8_tr = custom::Transpose::on(in8);
-    cv::GMat regressions8, scores8;
-    std::tie(regressions8, scores8) = cv::gapi::infer<custom::MTCNNProposal_113x63>(in8_tr);
-    currentScale = 0.059121592809202185;
-    cv::GArray<custom::Face> faces8 = custom::BuildFaces::on(scores8, regressions8, currentScale, tmcnnp_conf_thresh);
-    cv::GArray<custom::Face> nms_p_faces8 = custom::RunNMS::on(faces8, 0.5f, false);
-    //80x45
-    cv::GMat in9 = cv::gapi::resize(in_originalRGB, cv::Size(80, 45));
-    cv::GMat in9_tr = custom::Transpose::on(in9);
-    cv::GMat regressions9, scores9;
-    std::tie(regressions9, scores9) = cv::gapi::infer<custom::MTCNNProposal_80x45>(in9_tr);
-    currentScale = 0.041917209301724344;
-    cv::GArray<custom::Face> faces9 = custom::BuildFaces::on(scores9, regressions9, currentScale, tmcnnp_conf_thresh);
-    cv::GArray<custom::Face> nms_p_faces9 = custom::RunNMS::on(faces9, 0.5f, false);
-    //57x32
-    cv::GMat in10 = cv::gapi::resize(in_originalRGB, cv::Size(57, 32));
-    cv::GMat in10_tr = custom::Transpose::on(in10);
-    cv::GMat regressions10, scores10;
-    std::tie(regressions10, scores10) = cv::gapi::infer<custom::MTCNNProposal_57x32>(in10_tr);
-    currentScale = 0.029719301394922563;
-    cv::GArray<custom::Face> faces10 = custom::BuildFaces::on(scores10, regressions10, currentScale, tmcnnp_conf_thresh);
-    cv::GArray<custom::Face> nms_p_faces10 = custom::RunNMS::on(faces10, 0.5f, false);
-    //40x22
-    cv::GMat in11 = cv::gapi::resize(in_originalRGB, cv::Size(40, 22));
-    cv::GMat in11_tr = custom::Transpose::on(in11);
-    cv::GMat regressions11, scores11;
-    std::tie(regressions11, scores11) = cv::gapi::infer<custom::MTCNNProposal_40x22>(in11_tr);
-    currentScale = 0.021070984689000097;
-    cv::GArray<custom::Face> faces11 = custom::BuildFaces::on(scores11, regressions11, currentScale, tmcnnp_conf_thresh);
-    cv::GArray<custom::Face> nms_p_faces11 = custom::RunNMS::on(faces11, 0.5f, false);
-    //28x16
-    cv::GMat in12 = cv::gapi::resize(in_originalRGB, cv::Size(28, 16));
-    cv::GMat in12_tr = custom::Transpose::on(in12);
-    cv::GMat regressions12, scores12;
-    std::tie(regressions12, scores12) = cv::gapi::infer<custom::MTCNNProposal_28x16>(in12_tr);
-    currentScale = 0.014939328144501067;
-    cv::GArray<custom::Face> faces12 = custom::BuildFaces::on(scores12, regressions12, currentScale, tmcnnp_conf_thresh);
-    cv::GArray<custom::Face> nms_p_faces12 = custom::RunNMS::on(faces12, 0.5f, false);
-
-    cv::GArray<custom::Face> nms_p_faces_total = custom::MergePyramidOutputs::on(nms_p_faces0,
-                                                                                 nms_p_faces1,
-                                                                                 nms_p_faces2,
-                                                                                 nms_p_faces3,
-                                                                                 nms_p_faces4,
-                                                                                 nms_p_faces5,
-                                                                                 nms_p_faces6,
-                                                                                 nms_p_faces7,
-                                                                                 nms_p_faces8,
-                                                                                 nms_p_faces9,
-                                                                                 nms_p_faces10,
-                                                                                 nms_p_faces11,
-                                                                                 nms_p_faces12);
-    //Proposal post-processing
-    cv::GArray<custom::Face> nms07_p_faces_total = custom::RunNMS::on(nms_p_faces_total, 0.7f, false);
-#endif
     cv::GArray<custom::Face> final_p_faces_for_bb2squares = custom::ApplyRegression::on(nms07_p_faces_total, false);
     cv::GArray<custom::Face> final_faces_pnet = custom::BBoxesToSquares::on(final_p_faces_for_bb2squares);
 
@@ -917,7 +813,6 @@ int main(int argc, char* argv[])
     //cv::GComputation graph_mtcnn(cv::GIn(in_originalBGR), cv::GOut(cv::gapi::copy(in_originalBGR), final_faces_pnet));
 
     // MTCNN Proposal detection network
-#if 0
     std::vector<cv::gapi::ie::Params<cv::gapi::Generic>> mtcnnp_net;
     for (int i = 0; i < PYRAMID_LEVELS; ++i)
     {
@@ -963,143 +858,6 @@ int main(int argc, char* argv[])
         , mtcnnp_net[12]
         , mtcnnr_net
         , mtcnno_net);
-#else
-    //std::vector<size_t> reshape_dims_1777_1000 = { 1, 3, 1000, 1777 };
-    std::vector<size_t> reshape_dims_1777_1000 = { 1, 3, 1777, 1000 };
-    auto mtcnnp_net_1777x1000 = cv::gapi::ie::Params<custom::MTCNNProposal_1777x1000>{
-        tmcnnp_model_path,                // path to topology IR
-        weights_path(tmcnnp_model_path),  // path to weights
-        tmcnnp_target_dev,                // device specifier
-    }.cfgOutputLayers({ "conv4-2", "prob1" }).cfgInputReshape({ {"data", reshape_dims_1777_1000} });
-
-    //std::vector<size_t> reshape_dims_1260x709 = { 1, 3, 709, 1260 };
-    std::vector<size_t> reshape_dims_1260x709 = { 1, 3, 1260, 709 };
-    auto mtcnnp_net_1260x709 = cv::gapi::ie::Params<custom::MTCNNProposal_1260x709>{
-        tmcnnp_model_path,                // path to topology IR
-        weights_path(tmcnnp_model_path),  // path to weights
-        tmcnnp_target_dev,                // device specifier
-    }.cfgOutputLayers({ "conv4-2", "prob1" }).cfgInputReshape({ {"data", reshape_dims_1260x709} });
-
-    //std::vector<size_t> reshape_dims_893x502 = { 1, 3, 502, 893 };
-    std::vector<size_t> reshape_dims_893x502 = { 1, 3, 893, 502 };
-    auto mtcnnp_net_893x502 = cv::gapi::ie::Params<custom::MTCNNProposal_893x502>{
-        tmcnnp_model_path,                // path to topology IR
-        weights_path(tmcnnp_model_path),  // path to weights
-        tmcnnp_target_dev,                // device specifier
-    }.cfgOutputLayers({ "conv4-2", "prob1" }).cfgInputReshape({ {"data", reshape_dims_893x502} });
-
-    //std::vector<size_t> reshape_dims_633x356 = { 1, 3, 356, 633 };
-    std::vector<size_t> reshape_dims_633x356 = { 1, 3, 633, 356 };
-    auto mtcnnp_net_633x356 = cv::gapi::ie::Params<custom::MTCNNProposal_633x356>{
-        tmcnnp_model_path,                // path to topology IR
-        weights_path(tmcnnp_model_path),  // path to weights
-        tmcnnp_target_dev,                // device specifier
-    }.cfgOutputLayers({ "conv4-2", "prob1" }).cfgInputReshape({ {"data", reshape_dims_633x356} });
-
-    //std::vector<size_t> reshape_dims_449x252 = { 1, 3, 252, 449 };
-    std::vector<size_t> reshape_dims_449x252 = { 1, 3, 449, 252 };
-    auto mtcnnp_net_449x252 = cv::gapi::ie::Params<custom::MTCNNProposal_449x252>{
-        tmcnnp_model_path,                // path to topology IR
-        weights_path(tmcnnp_model_path),  // path to weights
-        tmcnnp_target_dev,                // device specifier
-    }.cfgOutputLayers({ "conv4-2", "prob1" }).cfgInputReshape({ {"data", reshape_dims_449x252} });
-
-    //std::vector<size_t> reshape_dims_318x179 = { 1, 3, 179, 318 };
-    std::vector<size_t> reshape_dims_318x179 = { 1, 3, 318, 179 };
-    auto mtcnnp_net_318x179 = cv::gapi::ie::Params<custom::MTCNNProposal_318x179>{
-        tmcnnp_model_path,                // path to topology IR
-        weights_path(tmcnnp_model_path),  // path to weights
-        tmcnnp_target_dev,                // device specifier
-    }.cfgOutputLayers({ "conv4-2", "prob1" }).cfgInputReshape({ {"data", reshape_dims_318x179} });
-
-    //std::vector<size_t> reshape_dims_225x127 = { 1, 3, 127, 225 };
-    std::vector<size_t> reshape_dims_225x127 = { 1, 3, 225, 127 };
-    auto mtcnnp_net_225x127 = cv::gapi::ie::Params<custom::MTCNNProposal_225x127>{
-        tmcnnp_model_path,                // path to topology IR
-        weights_path(tmcnnp_model_path),  // path to weights
-        tmcnnp_target_dev,                // device specifier
-    }.cfgOutputLayers({ "conv4-2", "prob1" }).cfgInputReshape({ {"data", reshape_dims_225x127} });
-
-    //std::vector<size_t> reshape_dims_160x90 = { 1, 3, 90, 160 };
-    std::vector<size_t> reshape_dims_160x90 = { 1, 3, 160, 90 };
-    auto mtcnnp_net_160x90 = cv::gapi::ie::Params<custom::MTCNNProposal_160x90>{
-        tmcnnp_model_path,                // path to topology IR
-        weights_path(tmcnnp_model_path),  // path to weights
-        tmcnnp_target_dev,                // device specifier
-    }.cfgOutputLayers({ "conv4-2", "prob1" }).cfgInputReshape({ {"data", reshape_dims_160x90} });
-
-    //std::vector<size_t> reshape_dims_113x63 = { 1, 3, 63, 113 };
-    std::vector<size_t> reshape_dims_113x63 = { 1, 3, 113, 63 };
-    auto mtcnnp_net_113x63 = cv::gapi::ie::Params<custom::MTCNNProposal_113x63>{
-        tmcnnp_model_path,                // path to topology IR
-        weights_path(tmcnnp_model_path),  // path to weights
-        tmcnnp_target_dev,                // device specifier
-    }.cfgOutputLayers({ "conv4-2", "prob1" }).cfgInputReshape({ {"data", reshape_dims_113x63} });
-
-    //std::vector<size_t> reshape_dims_80x45 = { 1, 3, 45, 80 };
-    std::vector<size_t> reshape_dims_80x45 = { 1, 3, 80, 45 };
-    auto mtcnnp_net_80x45 = cv::gapi::ie::Params<custom::MTCNNProposal_80x45>{
-        tmcnnp_model_path,                // path to topology IR
-        weights_path(tmcnnp_model_path),  // path to weights
-        tmcnnp_target_dev,                // device specifier
-    }.cfgOutputLayers({ "conv4-2", "prob1" }).cfgInputReshape({ {"data", reshape_dims_80x45} });
-
-    //std::vector<size_t> reshape_dims_57x32 = { 1, 3, 32, 57 };
-    std::vector<size_t> reshape_dims_57x32 = { 1, 3, 57, 32 };
-    auto mtcnnp_net_57x32 = cv::gapi::ie::Params<custom::MTCNNProposal_57x32>{
-        tmcnnp_model_path,                // path to topology IR
-        weights_path(tmcnnp_model_path),  // path to weights
-        tmcnnp_target_dev,                // device specifier
-    }.cfgOutputLayers({ "conv4-2", "prob1" }).cfgInputReshape({ {"data", reshape_dims_57x32} });
-
-    //std::vector<size_t> reshape_dims_40x22 = { 1, 3, 22, 40 };
-    std::vector<size_t> reshape_dims_40x22 = { 1, 3, 40, 22 };
-    auto mtcnnp_net_40x22 = cv::gapi::ie::Params<custom::MTCNNProposal_40x22>{
-        tmcnnp_model_path,                // path to topology IR
-        weights_path(tmcnnp_model_path),  // path to weights
-        tmcnnp_target_dev,                // device specifier
-    }.cfgOutputLayers({ "conv4-2", "prob1" }).cfgInputReshape({ {"data", reshape_dims_40x22} });
-
-    //std::vector<size_t> reshape_dims_28x16 = { 1, 3, 16, 28 };
-    std::vector<size_t> reshape_dims_28x16 = { 1, 3, 28, 16 };
-    auto mtcnnp_net_28x16 = cv::gapi::ie::Params<custom::MTCNNProposal_28x16>{
-        tmcnnp_model_path,                // path to topology IR
-        weights_path(tmcnnp_model_path),  // path to weights
-        tmcnnp_target_dev,                // device specifier
-    }.cfgOutputLayers({ "conv4-2", "prob1" }).cfgInputReshape({ {"data", reshape_dims_28x16} });
-
-    // MTCNN Refinement detection network
-    std::vector<size_t> reshape_dims_24x24 = { 1, 3, 24, 24 };
-    auto mtcnnr_net = cv::gapi::ie::Params<custom::MTCNNRefinement>{
-        tmcnnr_model_path,                // path to topology IR
-        weights_path(tmcnnr_model_path),  // path to weights
-        tmcnnr_target_dev,                // device specifier
-    }.cfgOutputLayers({ "conv5-2", "prob1" }).cfgInputLayers({ "data" });
-
-    // MTCNN Output detection network
-    std::vector<size_t> reshape_dims_48x48 = { 1, 3, 48, 48 };
-    auto mtcnno_net = cv::gapi::ie::Params<custom::MTCNNOutput>{
-        tmcnno_model_path,                // path to topology IR
-        weights_path(tmcnno_model_path),  // path to weights
-        tmcnno_target_dev,                // device specifier
-    }.cfgOutputLayers({ "conv6-2", "conv6-3", "prob1" }).cfgInputLayers({ "data" });
-
-    auto networks_mtcnn = cv::gapi::networks(mtcnnp_net_1777x1000
-        , mtcnnp_net_1260x709
-        , mtcnnp_net_893x502
-        , mtcnnp_net_633x356
-        , mtcnnp_net_449x252
-        , mtcnnp_net_318x179
-        , mtcnnp_net_225x127
-        , mtcnnp_net_160x90
-        , mtcnnp_net_113x63
-        , mtcnnp_net_80x45
-        , mtcnnp_net_57x32
-        , mtcnnp_net_40x22
-        , mtcnnp_net_28x16
-        , mtcnnr_net
-        , mtcnno_net);
-#endif
 
 
     auto kernels_mtcnn = cv::gapi::kernels< custom::OCVBuildFaces
