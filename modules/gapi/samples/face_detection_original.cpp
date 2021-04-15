@@ -771,7 +771,7 @@ int main(int argc, char* argv[])
         in_resized[i] = cv::gapi::resize(in_originalRGB, level_size[i]);
         in_transposed[i] = custom::Transpose::on(in_resized[i]);
         std::tie(regressions[i], scores[i]) = run_mtcnn_p(in_transposed[i], "MTCNNProposal_" + std::to_string(level_size[i].width) + "x" + std::to_string(level_size[i].height));
-        cv::GArray<custom::Face> faces = custom::BuildFaces::on(scores[i], regressions[i], scales[i], tmcnnp_conf_thresh);
+        faces = custom::BuildFaces::on(scores[i], regressions[i], scales[i], tmcnnp_conf_thresh);
         nms_p_faces[i] = custom::RunNMS::on(faces, 0.5f, false);
         total_faces = custom::AccumulatePyramidOutputs::on(nms_p_faces[i-1], nms_p_faces[i]);
     }
