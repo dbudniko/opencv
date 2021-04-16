@@ -632,7 +632,6 @@ static cv::Mat drawRectsAndPoints(const cv::Mat& img,
     img.convertTo(outImg, CV_8UC3);
 
     for (auto& d : data) {
-        //cv::rectangle(outImg, d.first, cv::Scalar(0, 0, 255));
         vis::bbox(outImg, d.first);
         auto pts = d.second;
         for (size_t i = 0; i < pts.size(); ++i) {
@@ -698,7 +697,6 @@ int main(int argc, char* argv[])
     cv::GMat in_transposed[PYRAMID_LEVELS];
     cv::GMat regressions[PYRAMID_LEVELS];
     cv::GMat scores[PYRAMID_LEVELS];
-    //cv::GArray<custom::Face> faces[PYRAMID_LEVELS];
     cv::GArray<custom::Face> nms_p_faces[PYRAMID_LEVELS];
     cv::GArray<custom::Face> total_faces[PYRAMID_LEVELS];
     cv::GArray<custom::Face> faces_init(std::vector<custom::Face>{});
@@ -706,34 +704,19 @@ int main(int argc, char* argv[])
     in_resized[0] = cv::gapi::resize(in_originalRGB, level_size[0]);
     in_transposed[0] = custom::Transpose::on(in_resized[0]);
     std::tie(regressions[0], scores[0]) = run_mtcnn_p(in_transposed[0], "MTCNNProposal_" + std::to_string(level_size[0].width) + "x" + std::to_string(level_size[0].height));
-    cv::GArray<custom::Face> faces = custom::BuildFaces::on(scores[0], regressions[0], scales[0], tmcnnp_conf_thresh);
-    nms_p_faces[0] = custom::RunNMS::on(faces, 0.5f, false);
+    cv::GArray<custom::Face> faces0 = custom::BuildFaces::on(scores[0], regressions[0], scales[0], tmcnnp_conf_thresh);
+    nms_p_faces[0] = custom::RunNMS::on(faces0, 0.5f, false);
     total_faces[0] = custom::AccumulatePyramidOutputs::on(faces_init, nms_p_faces[0]);
-    //total_faces[0] = {};
     for (int i = 1; i < PYRAMID_LEVELS; ++i)
     {
         in_resized[i] = cv::gapi::resize(in_originalRGB, level_size[i]);
         in_transposed[i] = custom::Transpose::on(in_resized[i]);
         std::tie(regressions[i], scores[i]) = run_mtcnn_p(in_transposed[i], "MTCNNProposal_" + std::to_string(level_size[i].width) + "x" + std::to_string(level_size[i].height));
-        cv::GArray<custom::Face> faces1 = custom::BuildFaces::on(scores[i], regressions[i], scales[i], tmcnnp_conf_thresh);
-        nms_p_faces[i] = custom::RunNMS::on(faces1, 0.5f, false);
+        cv::GArray<custom::Face> faces = custom::BuildFaces::on(scores[i], regressions[i], scales[i], tmcnnp_conf_thresh);
+        nms_p_faces[i] = custom::RunNMS::on(faces, 0.5f, false);
         total_faces[i] = custom::AccumulatePyramidOutputs::on(total_faces[i-1], nms_p_faces[i]);
     }
-    //cv::GArray<custom::Face> nms_p_faces_total = custom::MergePyramidOutputs::on(nms_p_faces[0],
-    //    nms_p_faces[1],
-    //    nms_p_faces[2],
-    //    nms_p_faces[3],
-    //    nms_p_faces[4],
-    //    nms_p_faces[5],
-    //    nms_p_faces[6],
-    //    nms_p_faces[7],
-    //    nms_p_faces[8],
-    //    nms_p_faces[9],
-    //    nms_p_faces[10],
-    //    nms_p_faces[11],
-    //    nms_p_faces[12]);
     //Proposal post-processing
-    //cv::GArray<custom::Face> nms07_p_faces_total = custom::RunNMS::on(nms_p_faces_total, 0.7f, false);
     cv::GArray<custom::Face> nms07_p_faces_total = custom::RunNMS::on(total_faces[PYRAMID_LEVELS-1], 0.7f, false);
     cv::GArray<custom::Face> final_p_faces_for_bb2squares = custom::ApplyRegression::on(nms07_p_faces_total, false);
     cv::GArray<custom::Face> final_faces_pnet = custom::BBoxesToSquares::on(final_p_faces_for_bb2squares);
@@ -761,7 +744,6 @@ int main(int argc, char* argv[])
     cv::GArray<custom::Face> nms07_o_faces_total = custom::RunNMS::on(final_o_faces_for_nms07, 0.7f, true);
     cv::GArray<custom::Face> final_faces_onet = custom::SwapFaces::on(nms07_o_faces_total);
 
-    //cv::GComputation graph_mtcnn(cv::GIn(in_originalBGR, total_faces[0]), cv::GOut(cv::gapi::copy(in_originalBGR), final_faces_onet));
     cv::GComputation graph_mtcnn(cv::GIn(in_originalBGR), cv::GOut(cv::gapi::copy(in_originalBGR), final_faces_onet));
 
 
@@ -828,7 +810,7 @@ int main(int argc, char* argv[])
 
 
     std::cout << "Reading " << input_file_name << std::endl;
-#if 1
+
     // Input image
     auto in_original = cv::imread(input_file_name);
     cv::Mat in_src;
@@ -843,14 +825,9 @@ int main(int argc, char* argv[])
 
     cv::Mat image;
     std::vector<custom::Face> out_faces;
-    //std::vector<custom::Face> in_faces;
-    //cv::GMetaArgs meta_args = { descr_of(gin(in_src)) }; 
-    //meta_args.push_back(cv::GMetaArg(cv::empty_array_desc()));
     auto graph_mtcnn_compiled = graph_mtcnn.compile(descr_of(gin(in_src)), cv::compile_args(networks_mtcnn, kernels_mtcnn));
-    //graph_mtcnn_compiled(gin(in_src, in_faces), gout(image, out_faces));
     graph_mtcnn_compiled(gin(in_src), gout(image, out_faces));
 
-    //graph_mtcnn.apply(); 
     std::cout << "Final Faces Size " << out_faces.size() << std::endl;
 
     std::vector<rectPoints> data;
@@ -868,59 +845,6 @@ int main(int argc, char* argv[])
     }
     auto resultImg = drawRectsAndPoints(image, data);
     cv::imshow("Out", resultImg);
-    //for (auto&& rc : out_faces) vis::bbox(image, rc.bbox.getRect());
-    //cv::imshow("Out", image);
     cv::waitKey(-1);
-#else
-    // Input stream
-    auto in_src = cv::gapi::wip::make_src<cv::gapi::wip::GCaptureSource>(input_file_name);
-
-    // Text recognition input size (also an input parameter to the graph)
-    auto in_rsz = cv::Size{ custom::IMAGE_WIDTH, custom::IMAGE_HEIGHT };
-
-    // Set the pipeline source & start the pipeline
-    pipeline_mtcnn.setSource(cv::gin(in_src, in_rsz));
-    pipeline_mtcnn.start();
-
-    // Declare the output data & run the processing loop
-    cv::TickMeter tm;
-    cv::Mat image;
-    std::vector<custom::Face> out_faces;
-
-    tm.start();
-    int frames = 0;
-    while (pipeline_mtcnn.pull(cv::gout(image, out_faces))) {
-        frames++;
-        std::cout << "Final Faces Size " << out_faces.size() << std::endl;
-        std::vector<rectPoints> data;
-        // show the image with faces in it
-        for (size_t i = 0; i < out_faces.size(); ++i) {
-            std::vector<cv::Point> pts;
-            for (int p = 0; p < NUM_PTS; ++p) {
-                pts.push_back(
-                    cv::Point(out_faces[i].ptsCoords[2 * p], out_faces[i].ptsCoords[2 * p + 1]));
-            }
-
-            auto rect = out_faces[i].bbox.getRect();
-            auto d = std::make_pair(rect, pts);
-            data.push_back(d);
-        }
-        // Visualize results on the frame
-        //for (auto&& rc : out_faces) vis::bbox(image, rc.bbox.getRect());
-        auto resultImg = drawRectsAndPoints(image, data);
-        tm.stop();
-        const auto fps_str = std::to_string(frames / tm.getTimeSec()) + " FPS";
-        //cv::putText(image, fps_str, { 0,32 }, cv::FONT_HERSHEY_SIMPLEX, 1.0, { 0,255,0 }, 2);
-        //cv::imshow("Out", image);
-        cv::putText(resultImg, fps_str, { 0,32 }, cv::FONT_HERSHEY_SIMPLEX, 1.0, { 0,255,0 }, 2);
-        cv::imshow("Out", resultImg);
-        cv::waitKey(1);
-        out_faces.clear();
-        tm.start();
-    }
-    tm.stop();
-    std::cout << "Processed " << frames << " frames"
-        << " (" << frames / tm.getTimeSec() << " FPS)" << std::endl;
-#endif
     return 0;
 }
