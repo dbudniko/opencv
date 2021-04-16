@@ -299,31 +299,9 @@ namespace custom {
             }
         };
 
-        G_API_OP(MergePyramidOutputs,
-            <GFaces(GFaces, GFaces, GFaces, GFaces, GFaces, GFaces,
-                    GFaces, GFaces, GFaces, GFaces, GFaces, GFaces, GFaces)>,
-            "sample.custom.mtcnn.merge_pyramid_outputs") {
-            static cv::GArrayDesc outMeta(const cv::GArrayDesc&,
-                const cv::GArrayDesc&,
-                const cv::GArrayDesc&,
-                const cv::GArrayDesc&,
-                const cv::GArrayDesc&,
-                const cv::GArrayDesc&,
-                const cv::GArrayDesc&,
-                const cv::GArrayDesc&,
-                const cv::GArrayDesc&,
-                const cv::GArrayDesc&,
-                const cv::GArrayDesc&,
-                const cv::GArrayDesc&,
-                const cv::GArrayDesc&
-            ) {
-                return cv::empty_array_desc();
-            }
-        };
-
         G_API_OP(AccumulatePyramidOutputs,
             <GFaces(GFaces, GFaces)>,
-            "sample.custom.mtcnn.merge_pyramid_outputs") {
+            "sample.custom.mtcnn.accumulate_pyramid_outputs") {
             static cv::GArrayDesc outMeta(const cv::GArrayDesc&,
                 const cv::GArrayDesc&
             ) {
@@ -426,62 +404,6 @@ namespace custom {
         };// GAPI_OCV_KERNEL(RunNMS)
 
 
-        GAPI_OCV_KERNEL(OCVMergePyramidOutputs, MergePyramidOutputs) {
-            static void run(const std::vector<Face> &in_faces0,
-                const std::vector<Face> &in_faces1,
-                const std::vector<Face> &in_faces2,
-                const std::vector<Face> &in_faces3,
-                const std::vector<Face> &in_faces4,
-                const std::vector<Face> &in_faces5,
-                const std::vector<Face> &in_faces6,
-                const std::vector<Face> &in_faces7,
-                const std::vector<Face> &in_faces8,
-                const std::vector<Face> &in_faces9,
-                const std::vector<Face> &in_faces10,
-                const std::vector<Face> &in_faces11,
-                const std::vector<Face> &in_faces12,
-                std::vector<Face> &out_faces) {
-                if (!in_faces0.empty()) {
-                    out_faces.insert(out_faces.end(), in_faces0.begin(), in_faces0.end());
-                }
-                if (!in_faces1.empty()) {
-                    out_faces.insert(out_faces.end(), in_faces1.begin(), in_faces1.end());
-                }
-                if (!in_faces2.empty()) {
-                    out_faces.insert(out_faces.end(), in_faces2.begin(), in_faces2.end());
-                }
-                if (!in_faces3.empty()) {
-                    out_faces.insert(out_faces.end(), in_faces3.begin(), in_faces3.end());
-                }
-                if (!in_faces4.empty()) {
-                    out_faces.insert(out_faces.end(), in_faces4.begin(), in_faces4.end());
-                }
-                if (!in_faces5.empty()) {
-                    out_faces.insert(out_faces.end(), in_faces5.begin(), in_faces5.end());
-                }
-                if (!in_faces6.empty()) {
-                    out_faces.insert(out_faces.end(), in_faces6.begin(), in_faces6.end());
-                }
-                if (!in_faces7.empty()) {
-                    out_faces.insert(out_faces.end(), in_faces7.begin(), in_faces7.end());
-                }
-                if (!in_faces8.empty()) {
-                    out_faces.insert(out_faces.end(), in_faces8.begin(), in_faces8.end());
-                }
-                if (!in_faces9.empty()) {
-                    out_faces.insert(out_faces.end(), in_faces9.begin(), in_faces9.end());
-                }
-                if (!in_faces10.empty()) {
-                    out_faces.insert(out_faces.end(), in_faces10.begin(), in_faces10.end());
-                }
-                if (!in_faces11.empty()) {
-                    out_faces.insert(out_faces.end(), in_faces11.begin(), in_faces11.end());
-                }
-                if (!in_faces12.empty()) {
-                    out_faces.insert(out_faces.end(), in_faces12.begin(), in_faces12.end());
-                }
-            }
-        };// GAPI_OCV_KERNEL(MergePyramidOutputs)
 
         GAPI_OCV_KERNEL(OCVAccumulatePyramidOutputs, AccumulatePyramidOutputs) {
             static void run(const std::vector<Face> &total_faces,
@@ -490,7 +412,7 @@ namespace custom {
                 out_faces = total_faces;
                 out_faces.insert(out_faces.end(), in_faces.begin(), in_faces.end());
             }
-        };// GAPI_OCV_KERNEL(MergePyramidOutputs)
+        };// GAPI_OCV_KERNEL(AccumulatePyramidOutputs)
 
         GAPI_OCV_KERNEL(OCVApplyRegression, ApplyRegression) {
             static void run(const std::vector<Face> &in_faces,
@@ -797,8 +719,8 @@ int main(int argc, char* argv[])
 
     auto kernels_mtcnn = cv::gapi::kernels< custom::OCVBuildFaces
         , custom::OCVRunNMS
-        , custom::OCVMergePyramidOutputs
         , custom::OCVApplyRegression
+        , custom::OCVAccumulatePyramidOutputs
         , custom::OCVBBoxesToSquares
         , custom::OCVR_O_NetPreProcGetROIs
         , custom::OCVRNetPostProc
