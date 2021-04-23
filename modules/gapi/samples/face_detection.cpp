@@ -765,11 +765,17 @@ int main(int argc, char* argv[]) {
     auto graph_mtcnn_compiled = graph_mtcnn.compile(descr_of(gin(in_src)), cv::compile_args(networks_mtcnn, kernels_mtcnn));
     tm.start();
     int frames = 0;
+    std::vector<custom::Face> out_faces;
     while (cv::waitKey(1) < 0) {
         frames++;
         cv::Mat image;
-        std::vector<custom::Face> out_faces;
-        graph_mtcnn_compiled(gin(in_src), gout(image, out_faces));
+        std::cout << "Frame " << frames << std::endl;
+        tm.stop();
+        //auto in_orig1 = cv::imread(input_file_name);
+        //auto graph_mtcnn_compiled1 = graph_mtcnn.compile(descr_of(gin(in_orig)), cv::compile_args(networks_mtcnn, kernels_mtcnn));
+        tm.start();
+        //graph_mtcnn_compiled1(gin(in_orig), gout(in_orig, out_faces));
+        graph_mtcnn_compiled(gin(in_orig), gout(in_orig, out_faces));
         tm.stop();
         std::cout << "Final Faces Size " << out_faces.size() << std::endl;
         std::vector<vis::rectPoints> data;
@@ -785,10 +791,11 @@ int main(int argc, char* argv[]) {
             auto d = std::make_pair(rect, pts);
             data.push_back(d);
         }
-        auto resultImg = vis::drawRectsAndPoints(image, data);
+        auto resultImg = vis::drawRectsAndPoints(in_orig, data);
         const auto fps_str = std::to_string(frames / tm.getTimeSec()) + " FPS";
         cv::putText(resultImg, fps_str, { 0,32 }, cv::FONT_HERSHEY_SIMPLEX, 1.0, { 0,255,0 }, 2);
         cv::imshow("Out", resultImg);
+        //cv::waitKey(-1);
         out_faces.clear();
         tm.start();
     }
