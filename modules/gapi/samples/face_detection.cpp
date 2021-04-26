@@ -671,7 +671,7 @@ int main(int argc, char* argv[]) {
     nms_p_faces[0] = custom::RunNMS::on(faces0, 0.5, false);
     total_faces[0] = custom::AccumulatePyramidOutputs::on(faces_init, nms_p_faces[0]);
     //The rest PNet pyramid layers to accumlate all layers result in total_faces[PYRAMID_LEVELS - 1]]
-#if 0
+#if 1
     for (int i = 1; i < pyramid_levels; ++i)
     {
         in_resized[i] = cv::gapi::resize(in_originalRGB, level_size[i]);
@@ -710,8 +710,8 @@ int main(int argc, char* argv[]) {
     cv::GArray<custom::Face> nms07_o_faces_total = custom::RunNMS::on(final_o_faces_for_nms07, 0.7, true);
     cv::GArray<custom::Face> final_faces_onet = custom::SwapFaces::on(nms07_o_faces_total);
 #endif
-    //cv::GComputation graph_mtcnn(cv::GIn(in_original), cv::GOut(cv::gapi::copy(in_original), final_faces_onet));
-    cv::GComputation graph_mtcnn(cv::GIn(in_original), cv::GOut(cv::gapi::copy(in_original), total_faces[0]));
+    cv::GComputation graph_mtcnn(cv::GIn(in_original), cv::GOut(cv::gapi::copy(in_original), final_faces_onet));
+    //cv::GComputation graph_mtcnn(cv::GIn(in_original), cv::GOut(cv::gapi::copy(in_original), total_faces[0]));
 
     // MTCNN Refinement detection network
     auto mtcnnr_net = cv::gapi::ie::Params<custom::MTCNNRefinement>{
