@@ -184,6 +184,16 @@ std::vector<Face> buildFaces(const cv::Mat& scores,
     }
     std::cout << std::endl;
 
+    //Python example
+    //////////
+    auto out_side = std::max(h, w);
+    auto in_side = 2 * out_side + 11;
+    double stride = 0.0;
+    if (out_side != 1)
+    {
+        stride = static_cast<double>(in_side - 12) / static_cast<double>(out_side - 1);
+    }
+    //////////
 
     std::vector<Face> boxes;
 
@@ -195,16 +205,27 @@ std::vector<Face> buildFaces(const cv::Mat& scores,
             Face faceInfo;
             BBox& faceBox = faceInfo.bbox;
 
-            faceBox.x1 = (static_cast<double>(x) * P_NET_STRIDE) / scaleFactor;
-            faceBox.y1 = (static_cast<double>(y) * P_NET_STRIDE) / scaleFactor;
-            faceBox.x2 = (static_cast<double>(x) * P_NET_STRIDE + P_NET_WINDOW_SIZE - 1.f) / scaleFactor;
-            faceBox.y2 = (static_cast<double>(y) * P_NET_STRIDE + P_NET_WINDOW_SIZE - 1.f) / scaleFactor;
+            //faceBox.x1 = (static_cast<double>(x) * P_NET_STRIDE) / scaleFactor;
+            //faceBox.y1 = (static_cast<double>(y) * P_NET_STRIDE) / scaleFactor;
+            //faceBox.x2 = (static_cast<double>(x) * P_NET_STRIDE + P_NET_WINDOW_SIZE - 1.0) / scaleFactor;
+            //faceBox.y2 = (static_cast<double>(y) * P_NET_STRIDE + P_NET_WINDOW_SIZE - 1.0) / scaleFactor;
+            faceBox.x1 = (static_cast<double>(x) * stride) / scaleFactor;
+            faceBox.y1 = (static_cast<double>(y) * stride) / scaleFactor;
+            faceBox.x2 = (static_cast<double>(x) * stride + P_NET_WINDOW_SIZE - 1.0) / scaleFactor;
+            faceBox.y2 = (static_cast<double>(y) * stride + P_NET_WINDOW_SIZE - 1.0) / scaleFactor;
             faceInfo.regression[0] = reg_data[i];
             faceInfo.regression[1] = reg_data[i + size];
             faceInfo.regression[2] = reg_data[i + 2 * size];
             faceInfo.regression[3] = reg_data[i + 3 * size];
             faceInfo.score = scores_data[i];
-            boxes.push_back(faceInfo);
+            //boxes.push_back(faceInfo);
+            //Python example
+            //////////
+            if ((faceBox.x2 > faceBox.x1) && (faceBox.y2 > faceBox.y1)) {
+                boxes.push_back(faceInfo);
+            }
+            //////////
+
         }
     }
 
