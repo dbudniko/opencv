@@ -706,7 +706,11 @@ int main(int argc, char* argv[]) {
     }
 
     //Proposal post-processing
-    cv::GArray<custom::Face> nms07_p_faces_total = custom::RunNMS::on(total_faces[pyramid_levels - 1], 0.7, false);
+    //cv::GArray<custom::Face> nms07_p_faces_total = custom::RunNMS::on(total_faces[pyramid_levels - 1], 0.7, false);
+    //Python example
+    //////////
+    cv::GArray<custom::Face> nms07_p_faces_total = custom::RunNMS::on(total_faces[pyramid_levels - 1], 0.7, true);
+    //////////
     cv::GArray<custom::Face> final_p_faces_for_bb2squares = custom::ApplyRegression::on(nms07_p_faces_total, false);
     cv::GArray<custom::Face> final_faces_pnet = custom::BBoxesToSquares::on(final_p_faces_for_bb2squares);
 
