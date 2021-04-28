@@ -193,6 +193,8 @@ std::vector<Face> buildFaces(const cv::Mat& scores,
     {
         stride = static_cast<double>(in_side - 12) / static_cast<double>(out_side - 1);
     }
+    std::cout << "stride " << stride << std::endl;
+    std::cout << "threshold " << threshold << std::endl;
     //////////
 
     std::vector<Face> boxes;
