@@ -525,7 +525,7 @@ GAPI_OCV_KERNEL(OCVTranspose, Transpose) {
 namespace vis {
 namespace {
 void bbox(const cv::Mat& m, const cv::Rect& rc) {
-    std::cout << "Final rectangle " << "x1 = " << rc.x << "y1 = " << rc.y << "x2 = " << rc.x + rc.width << "y2 = " << rc.y + rc.height << std::endl;
+    std::cout << "Final rectangle " << "x1 = " << rc.x << " y1 = " << rc.y << " x2 = " << rc.x + rc.width << " y2 = " << rc.y + rc.height << std::endl;
     cv::rectangle(m, rc, cv::Scalar{ 0,255,0 }, 2, cv::LINE_8, 0);
 };
 
