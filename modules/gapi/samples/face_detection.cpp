@@ -226,6 +226,10 @@ std::vector<Face> buildFaces(const cv::Mat& scores,
             if ((faceBox.x2 > faceBox.x1) && (faceBox.y2 > faceBox.y1)) {
                 boxes.push_back(faceInfo);
             }
+            else {
+                std::cout << "faceBox skipped: " << "x2 " << faceBox.x2 << " x1 " << faceBox.x2 << " y2 " << faceBox.y2 << " y1 " << faceBox.y1 << std::endl;
+
+            }
             //////////
 
         }
