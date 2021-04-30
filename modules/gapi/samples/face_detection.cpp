@@ -166,11 +166,18 @@ std::vector<Face> buildFaces(const cv::Mat& scores,
     auto size = w * h;
     std::cout << "scores_data w " << w << " scores_data h " << h << std::endl;
     const float* scores_data = scores.ptr<float>();
-    for (int i = 0; i < 20; i++)
+    for (int i = 0; i < 200; i++)
     {
         std::cout << scores_data[i] << " ";
     }
     std::cout << std::endl;
+    for (int i = size - 200; i < size; i++)
+    {
+        std::cout << scores_data[i] << " ";
+    }
+    std::cout << std::endl;
+
+
     scores_data += size;
 
     const float* reg_data = regressions.ptr<float>();
@@ -178,11 +185,11 @@ std::vector<Face> buildFaces(const cv::Mat& scores,
     auto wr = regressions.size[3];
     auto hr = regressions.size[2];
     std::cout << "regressions_data w "  << wr <<  " regressions_data h "  << hr << std::endl;
-    for(int i = 0; i < 20; i++)
-    {
-        std::cout << reg_data[i] << " ";
-    }
-    std::cout << std::endl;
+    //for(int i = 0; i < 20; i++)
+    //{
+    //    std::cout << reg_data[i] << " ";
+    //}
+    //std::cout << std::endl;
 
     //Python example
     //////////
@@ -198,9 +205,10 @@ std::vector<Face> buildFaces(const cv::Mat& scores,
     //////////
 
     std::vector<Face> boxes;
-
+    std::cout << "SCORES" << std::endl;
     for (int i = 0; i < size; i++) {
-        if (scores_data[i] >= (threshold)) {
+        if (scores_data[i] >= (float)(threshold)) {
+            //std::cout  << scores_data[i]  << std::endl;
             int y = i / w;
             int x = i - w * y;
 
@@ -794,9 +802,9 @@ int main(int argc, char* argv[]) {
     // Input image
     cv::TickMeter tm;
     //static (comment out for video cap) 
-    //auto in_orig = cv::imread(input_file_name);
+    auto in_orig = cv::imread(input_file_name);
     // remove comment out for video cap
-    cv::Mat in_orig;
+    //cv::Mat in_orig;
 
     cap.read(in_orig);
     cv::Mat in_src;
@@ -805,8 +813,8 @@ int main(int argc, char* argv[]) {
     tm.start();
     int frames = 0;
     std::vector<custom::Face> out_faces;
-    //while (cv::waitKey(1) < 0) {
-    while (cap.read(in_orig)) {
+    while (cv::waitKey(1) < 0) {
+    //while (cap.read(in_orig)) {
         frames++;
         std::cout << "Frame " << frames << std::endl;
         tm.stop();
@@ -835,7 +843,7 @@ int main(int argc, char* argv[]) {
         cv::putText(resultImg, fps_str, { 0,32 }, cv::FONT_HERSHEY_SIMPLEX, 1.0, { 0,255,0 }, 2);
         cv::imshow("Out", resultImg);
         // remove comment out for video cap
-        cv::waitKey(1);
+        //cv::waitKey(1);
         out_faces.clear();
         tm.start();
     }
