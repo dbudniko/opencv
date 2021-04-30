@@ -805,8 +805,8 @@ int main(int argc, char* argv[]) {
     auto in_orig = cv::imread(input_file_name);
     // remove comment out for video cap
     //cv::Mat in_orig;
+    //cap.read(in_orig);
 
-    cap.read(in_orig);
     cv::Mat in_src;
     in_orig.copyTo(in_src);
     auto graph_mtcnn_compiled = graph_mtcnn.compile(descr_of(gin(in_src)), cv::compile_args(networks_mtcnn, kernels_mtcnn));
