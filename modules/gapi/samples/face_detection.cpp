@@ -129,6 +129,7 @@ struct Face {
                 (faces[idx].bbox.y2 - faces[idx].bbox.y1 + 1);
             for (size_t i = 1; i < tmpIndices.size(); ++i) {
                 int tmpIdx = tmpIndices[i];
+                std::cout << "runNMS tmpIdx " << tmpIdx << std::endl;
                 const double interX1 = std::max(faces[idx].bbox.x1, faces[tmpIdx].bbox.x1);
                 const double interY1 = std::max(faces[idx].bbox.y1, faces[tmpIdx].bbox.y1);
                 const double interX2 = std::min(faces[idx].bbox.x2, faces[tmpIdx].bbox.x2);
