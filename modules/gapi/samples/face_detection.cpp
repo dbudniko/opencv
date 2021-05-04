@@ -106,6 +106,7 @@ struct Face {
 
     static std::vector<Face> runNMS(std::vector<Face>& faces, const double threshold,
                                     const bool useMin = false) {
+        std::cout << "runNMS threshold " << threshold << " useMin h " << useMin << std::endl;
         std::vector<Face> facesNMS;
         if (faces.empty()) {
             return facesNMS;
@@ -117,7 +118,7 @@ struct Face {
 
         std::vector<int> indices(faces.size());
         std::iota(indices.begin(), indices.end(), 0);
-
+        std::cout << "runNMS indices size " << indices.size() << useMin << std::endl;
         while (indices.size() > 0) {
             const int idx = indices[0];
             facesNMS.push_back(faces[idx]);
