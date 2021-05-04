@@ -106,7 +106,7 @@ struct Face {
 
     static std::vector<Face> runNMS(std::vector<Face>& faces, const double threshold,
                                     const bool useMin = false) {
-        std::cout << "runNMS threshold " << threshold << " useMin h " << useMin << std::endl;
+        std::cout << "runNMS threshold " << threshold << " useMin " << useMin << std::endl;
         std::vector<Face> facesNMS;
         if (faces.empty()) {
             return facesNMS;
@@ -118,10 +118,11 @@ struct Face {
 
         std::vector<int> indices(faces.size());
         std::iota(indices.begin(), indices.end(), 0);
-        std::cout << "runNMS indices size " << indices.size() << useMin << std::endl;
+        std::cout << "runNMS indices size before while " << indices.size() << std::endl;
         while (indices.size() > 0) {
             const int idx = indices[0];
             facesNMS.push_back(faces[idx]);
+            std::cout << "runNMS indices size inside while " << indices.size() << " idx " << idx << std::endl;
             std::vector<int> tmpIndices = indices;
             indices.clear();
             const double area1 = (faces[idx].bbox.x2 - faces[idx].bbox.x1 + 1) *
@@ -145,6 +146,7 @@ struct Face {
                 } else {
                     overlap = interArea / (area1 + area2 - interArea);
                 }
+                //std::cout << "runNMS area1 " << area1 << " area2 " << area2 << " overlap " << overlap << " interArea " << interArea << std::endl;
                 if (overlap <= threshold) {
                     indices.push_back(tmpIdx);
                 }
