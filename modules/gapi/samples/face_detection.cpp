@@ -464,7 +464,7 @@ GAPI_OCV_KERNEL(OCVRNetPostProc, RNetPostProc) {
         for (unsigned int k = 0; k < in_faces.size(); ++k) {
             const float* scores_data = in_scores[k].ptr<float>();
             const float* reg_data = in_regresssions[k].ptr<float>();
-            std::cout << "OCVRNetPostProc!!! scores_data[0] " << scores_data[0] << " scores_data[1] " << scores_data[1] << std::endl;
+            //std::cout << "OCVRNetPostProc!!! scores_data[0] " << scores_data[0] << " scores_data[1] " << scores_data[1] << std::endl;
             if (scores_data[1] >= threshold) {
                 //std::cout << "OCVRNetPostProc!!! scores_data[0] " << scores_data[0] << " scores_data[1] " << scores_data[1] << std::endl;
                 //std::cout << "OCVRNetPostProc!!! reg_data[0] " << reg_data[0] << " reg_data[1] " << reg_data[1] <<
