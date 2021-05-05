@@ -113,9 +113,9 @@ struct Face {
         }
 
         std::cout << "runNMS faces size before sort " << faces.size() << std::endl;
-        for (size_t i = 0; i < faces.size(); ++i) {
-             std::cout << "x1 "  << faces[i].bbox.x1 << " y1 " << faces[i].bbox.y1 << " x2 " << faces[i].bbox.x2 << " y2 " << faces[i].bbox.y2 << " score " << faces[i].score << std::endl;
-        }
+        //for (size_t i = 0; i < faces.size(); ++i) {
+        //     std::cout << "x1 "  << faces[i].bbox.x1 << " y1 " << faces[i].bbox.y1 << " x2 " << faces[i].bbox.x2 << " y2 " << faces[i].bbox.y2 << " score " << faces[i].score << std::endl;
+        //}
 
         std::sort(faces.begin(), faces.end(), [](const Face& f1, const Face& f2) {
             return f1.score > f2.score;
@@ -754,9 +754,9 @@ int main(int argc, char* argv[]) {
 
     //Refinement post-processing
     cv::GArray<custom::Face> rnet_post_proc_faces = custom::RNetPostProc::on(final_faces_pnet, scoresRNet, regressionsRNet, conf_thresh_r);
-    cv::GArray<custom::Face> nms07_r_faces_total = custom::RunNMS::on(rnet_post_proc_faces, 0.7, false);
-    cv::GArray<custom::Face> final_r_faces_for_bb2squares = custom::ApplyRegression::on(nms07_r_faces_total, true);
-    cv::GArray<custom::Face> final_faces_rnet = custom::BBoxesToSquares::on(final_r_faces_for_bb2squares);
+    cv::GArray<custom::Face> final_r_faces_for_bb2squares = custom::ApplyRegression::on(rnet_post_proc_faces, true);
+    cv::GArray<custom::Face> final_faces_rnet_bb2squares = custom::BBoxesToSquares::on(final_r_faces_for_bb2squares);
+    cv::GArray<custom::Face> final_faces_rnet = custom::RunNMS::on(final_faces_rnet_bb2squares, 0.7, false);
 
     //Output part of MTCNN graph
     cv::GArray<cv::Rect> faces_roi_rnet = custom::R_O_NetPreProcGetROIs::on(final_faces_rnet, in_sz);
