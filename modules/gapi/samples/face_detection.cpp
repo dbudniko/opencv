@@ -719,7 +719,9 @@ int main(int argc, char* argv[]) {
     in_transposed[0] = custom::Transpose::on(in_resized[0]);
     std::tie(regressions[0], scores[0]) = run_mtcnn_p(in_transposed[0], get_pnet_level_name(level_size[0]));
     cv::GArray<custom::Face> faces0 = custom::BuildFaces::on(scores[0], regressions[0], scales[0], conf_thresh_p);
-    nms_p_faces[0] = custom::RunNMS::on(faces0, 0.5, false);
+    cv::GArray<custom::Face> final_p_faces_for_bb2squares = custom::ApplyRegression::on(faces0, false);
+    cv::GArray<custom::Face> final_faces_pnet0 = custom::BBoxesToSquares::on(final_p_faces_for_bb2squares);
+    nms_p_faces[0] = custom::RunNMS::on(final_faces_pnet0, 0.5, false);
     total_faces[0] = custom::AccumulatePyramidOutputs::on(faces_init, nms_p_faces[0]);
     //The rest PNet pyramid layers to accumlate all layers result in total_faces[PYRAMID_LEVELS - 1]]
 #if 1
@@ -729,7 +731,9 @@ int main(int argc, char* argv[]) {
         in_transposed[i] = custom::Transpose::on(in_resized[i]);
         std::tie(regressions[i], scores[i]) = run_mtcnn_p(in_transposed[i], get_pnet_level_name(level_size[i]));
         cv::GArray<custom::Face> faces = custom::BuildFaces::on(scores[i], regressions[i], scales[i], conf_thresh_p);
-        nms_p_faces[i] = custom::RunNMS::on(faces, 0.5, false);
+        cv::GArray<custom::Face> final_p_faces_for_bb2squares_i = custom::ApplyRegression::on(faces, false);
+        cv::GArray<custom::Face> final_faces_pnet_i = custom::BBoxesToSquares::on(final_p_faces_for_bb2squares_i);
+        nms_p_faces[i] = custom::RunNMS::on(final_faces_pnet_i, 0.5, false);
         total_faces[i] = custom::AccumulatePyramidOutputs::on(total_faces[i - 1], nms_p_faces[i]);
     }
 
@@ -737,10 +741,10 @@ int main(int argc, char* argv[]) {
     //cv::GArray<custom::Face> nms07_p_faces_total = custom::RunNMS::on(total_faces[pyramid_levels - 1], 0.7, false);
     //Python example
     //////////
-    cv::GArray<custom::Face> nms07_p_faces_total = custom::RunNMS::on(total_faces[pyramid_levels - 1], 0.7, true);
+    cv::GArray<custom::Face> final_faces_pnet = custom::RunNMS::on(total_faces[pyramid_levels - 1], 0.7, true);
     //////////
-    cv::GArray<custom::Face> final_p_faces_for_bb2squares = custom::ApplyRegression::on(nms07_p_faces_total, false);
-    cv::GArray<custom::Face> final_faces_pnet = custom::BBoxesToSquares::on(final_p_faces_for_bb2squares);
+    //cv::GArray<custom::Face> final_p_faces_for_bb2squares = custom::ApplyRegression::on(nms07_p_faces_total, false);
+    //cv::GArray<custom::Face> final_faces_pnet = custom::BBoxesToSquares::on(final_p_faces_for_bb2squares);
 
     //Refinement part of MTCNN graph
     cv::GArray<cv::Rect> faces_roi_pnet = custom::R_O_NetPreProcGetROIs::on(final_faces_pnet, in_sz);
