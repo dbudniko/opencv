@@ -112,9 +112,19 @@ struct Face {
             return facesNMS;
         }
 
+        std::cout << "runNMS faces size before sort " << faces.size() << std::endl;
+        for (size_t i = 0; i < faces.size(); ++i) {
+             std::cout << "x1 "  << faces[i].bbox.x1 << " y1 " << faces[i].bbox.y1 << " x2 " << faces[i].bbox.x2 << " y2 " << faces[i].bbox.y2 << " score " << faces[i].score << std::endl;
+        }
+
         std::sort(faces.begin(), faces.end(), [](const Face& f1, const Face& f2) {
             return f1.score > f2.score;
         });
+
+        //std::cout << "runNMS faces size after sort " << faces.size() << std::endl;
+        //for (size_t i = 0; i < faces.size(); ++i) {
+        //     std::cout << "x1 "  << faces[i].bbox.x1 << " x2 " << faces[i].bbox.x2 << " y1 " << faces[i].bbox.y1 << " y2 " << faces[i].bbox.y2 << " score " << faces[i].score << std::endl;
+        //}
 
         std::vector<int> indices(faces.size());
         std::iota(indices.begin(), indices.end(), 0);
@@ -122,14 +132,14 @@ struct Face {
         while (indices.size() > 0) {
             const int idx = indices[0];
             facesNMS.push_back(faces[idx]);
-            std::cout << "runNMS indices size inside while " << indices.size() << " idx " << idx << std::endl;
+            //std::cout << "runNMS indices size inside while " << indices.size() << " idx " << idx << std::endl;
             std::vector<int> tmpIndices = indices;
             indices.clear();
             const double area1 = (faces[idx].bbox.x2 - faces[idx].bbox.x1 + 1) *
                 (faces[idx].bbox.y2 - faces[idx].bbox.y1 + 1);
             for (size_t i = 1; i < tmpIndices.size(); ++i) {
                 int tmpIdx = tmpIndices[i];
-                std::cout << "runNMS tmpIdx " << tmpIdx << std::endl;
+                //std::cout << "runNMS tmpIdx " << tmpIdx << std::endl;
                 const double interX1 = std::max(faces[idx].bbox.x1, faces[tmpIdx].bbox.x1);
                 const double interY1 = std::max(faces[idx].bbox.y1, faces[tmpIdx].bbox.y1);
                 const double interX2 = std::min(faces[idx].bbox.x2, faces[tmpIdx].bbox.x2);
@@ -149,6 +159,7 @@ struct Face {
                 }
                 //std::cout << "runNMS area1 " << area1 << " area2 " << area2 << " overlap " << overlap << " interArea " << interArea << std::endl;
                 if (overlap <= threshold) {
+                    //std::cout << "runNMS tmpIdx " << tmpIdx << std::endl;
                     indices.push_back(tmpIdx);
                 }
             }
