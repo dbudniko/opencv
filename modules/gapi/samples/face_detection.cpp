@@ -460,13 +460,15 @@ GAPI_OCV_KERNEL(OCVRNetPostProc, RNetPostProc) {
         std::cout << "OCVRNetPostProc!!! input scores number " << in_scores.size() <<
             " input regressions number " << in_regresssions.size() <<
             " input faces size " << in_faces.size() << std::endl;
+
         for (unsigned int k = 0; k < in_faces.size(); ++k) {
             const float* scores_data = in_scores[k].ptr<float>();
             const float* reg_data = in_regresssions[k].ptr<float>();
+            std::cout << "OCVRNetPostProc!!! scores_data[0] " << scores_data[0] << " scores_data[1] " << scores_data[1] << std::endl;
             if (scores_data[1] >= threshold) {
-                std::cout << "OCVRNetPostProc!!! scores_data[0] " << scores_data[0] << " scores_data[1] " << scores_data[1] << std::endl;
-                std::cout << "OCVRNetPostProc!!! reg_data[0] " << reg_data[0] << " reg_data[1] " << reg_data[1] <<
-                    "reg_data[2] " << reg_data[2] << " reg_data[3] " << reg_data[3] << std::endl;
+                //std::cout << "OCVRNetPostProc!!! scores_data[0] " << scores_data[0] << " scores_data[1] " << scores_data[1] << std::endl;
+                //std::cout << "OCVRNetPostProc!!! reg_data[0] " << reg_data[0] << " reg_data[1] " << reg_data[1] <<
+                //    "reg_data[2] " << reg_data[2] << " reg_data[3] " << reg_data[3] << std::endl;
                 Face info = in_faces[k];
                 info.score = scores_data[1];
                 std::copy_n(reg_data, NUM_REGRESSIONS, info.regression.begin());
@@ -494,10 +496,11 @@ GAPI_OCV_KERNEL(OCVONetPostProc, ONetPostProc) {
             const float* scores_data = in_scores[k].ptr<float>();
             const float* reg_data = in_regresssions[k].ptr<float>();
             const float* landmark_data = in_landmarks[k].ptr<float>();
+            std::cout << "OCVONetPostProc!!! scores_data[0] " << scores_data[0] << " scores_data[1] " << scores_data[1] << std::endl;
             if (scores_data[1] >= threshold) {
-                std::cout << "OCVONetPostProc!!! scores_data[0] " << scores_data[0] << " scores_data[1] " << scores_data[1] << std::endl;
-                std::cout << "OCVONetPostProc!!! reg_data[0] " << reg_data[0] << " reg_data[1] " << reg_data[1] <<
-                    " reg_data[2] " << reg_data[2] << " reg_data[3] " << reg_data[3] << std::endl;
+                //std::cout << "OCVONetPostProc!!! scores_data[0] " << scores_data[0] << " scores_data[1] " << scores_data[1] << std::endl;
+                //std::cout << "OCVONetPostProc!!! reg_data[0] " << reg_data[0] << " reg_data[1] " << reg_data[1] <<
+                //    " reg_data[2] " << reg_data[2] << " reg_data[3] " << reg_data[3] << std::endl;
                 Face info = in_faces[k];
                 info.score = scores_data[1];
                 for (int i = 0; i < 4; ++i) {
