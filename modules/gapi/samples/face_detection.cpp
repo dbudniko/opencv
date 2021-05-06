@@ -56,10 +56,16 @@ namespace {
 #define NUM_PTS 5
 
 struct BBox {
-    double x1;
-    double y1;
-    double x2;
-    double y2;
+    //double x1;
+    //double y1;
+    //double x2;
+    //double y2;
+
+    int x1;
+    int y1;
+    int x2;
+    int y2;
+
 
     cv::Rect getRect() const { return cv::Rect(static_cast<int>(x1),
                                                static_cast<int>(y1),
@@ -71,10 +77,10 @@ struct BBox {
         double bboxWidth = x2 - x1;
         double bboxHeight = y2 - y1;
         double side = std::max(bboxWidth, bboxHeight);
-        bbox.x1 = static_cast<double>(x1) + (bboxWidth - side) * 0.5;
-        bbox.y1 = static_cast<double>(y1) + (bboxHeight - side) * 0.5;
-        bbox.x2 = bbox.x1 + side;
-        bbox.y2 = bbox.y1 + side;
+        bbox.x1 = static_cast<int>(static_cast<double>(x1) + (bboxWidth - side) * 0.5);
+        bbox.y1 = static_cast<int>(static_cast<double>(y1) + (bboxHeight - side) * 0.5);
+        bbox.x2 = static_cast<int>(static_cast<double>(bbox.x1) + side);
+        bbox.y2 = static_cast<int>(static_cast<double>(bbox.y1) + side);;
         return bbox;
     }
 };
@@ -91,10 +97,10 @@ struct Face {
                 face.bbox.x2 - face.bbox.x1 + static_cast<double>(addOne);
             double bboxHeight =
                 face.bbox.y2 - face.bbox.y1 + static_cast<double>(addOne);
-            face.bbox.x1 = face.bbox.x1 + static_cast<double>(face.regression[1]) * bboxWidth;
-            face.bbox.y1 = face.bbox.y1 + static_cast<double>(face.regression[0]) * bboxHeight;
-            face.bbox.x2 = face.bbox.x2 + static_cast<double>(face.regression[3]) * bboxWidth;
-            face.bbox.y2 = face.bbox.y2 + static_cast<double>(face.regression[2]) * bboxHeight;
+            face.bbox.x1 = face.bbox.x1 + (static_cast<double>(face.regression[1]) * bboxWidth);
+            face.bbox.y1 = face.bbox.y1 + (static_cast<double>(face.regression[0]) * bboxHeight);
+            face.bbox.x2 = face.bbox.x2 + (static_cast<double>(face.regression[3]) * bboxWidth);
+            face.bbox.y2 = face.bbox.y2 + (static_cast<double>(face.regression[2]) * bboxHeight);
         }
     }
 
@@ -722,7 +728,7 @@ int main(int argc, char* argv[]) {
     in_transposed[0] = custom::Transpose::on(in_resized[0]);
     std::tie(regressions[0], scores[0]) = run_mtcnn_p(in_transposed[0], get_pnet_level_name(level_size[0]));
     cv::GArray<custom::Face> faces0 = custom::BuildFaces::on(scores[0], regressions[0], scales[0], conf_thresh_p);
-    cv::GArray<custom::Face> final_p_faces_for_bb2squares = custom::ApplyRegression::on(faces0, false);
+    cv::GArray<custom::Face> final_p_faces_for_bb2squares = custom::ApplyRegression::on(faces0, true);
     cv::GArray<custom::Face> final_faces_pnet0 = custom::BBoxesToSquares::on(final_p_faces_for_bb2squares);
     nms_p_faces[0] = custom::RunNMS::on(final_faces_pnet0, 0.5, false);
     total_faces[0] = custom::AccumulatePyramidOutputs::on(faces_init, nms_p_faces[0]);
@@ -734,7 +740,7 @@ int main(int argc, char* argv[]) {
         in_transposed[i] = custom::Transpose::on(in_resized[i]);
         std::tie(regressions[i], scores[i]) = run_mtcnn_p(in_transposed[i], get_pnet_level_name(level_size[i]));
         cv::GArray<custom::Face> faces = custom::BuildFaces::on(scores[i], regressions[i], scales[i], conf_thresh_p);
-        cv::GArray<custom::Face> final_p_faces_for_bb2squares_i = custom::ApplyRegression::on(faces, false);
+        cv::GArray<custom::Face> final_p_faces_for_bb2squares_i = custom::ApplyRegression::on(faces, true);
         cv::GArray<custom::Face> final_faces_pnet_i = custom::BBoxesToSquares::on(final_p_faces_for_bb2squares_i);
         nms_p_faces[i] = custom::RunNMS::on(final_faces_pnet_i, 0.5, false);
         total_faces[i] = custom::AccumulatePyramidOutputs::on(total_faces[i - 1], nms_p_faces[i]);
