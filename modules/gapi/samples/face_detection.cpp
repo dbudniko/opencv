@@ -74,13 +74,13 @@ struct BBox {
 
     BBox getSquare() const {
         BBox bbox;
-        float bboxWidth = x2 - x1;
-        float bboxHeight = y2 - y1;
+        float bboxWidth = static_cast<float>(x2 - x1);
+        float bboxHeight = static_cast<float>(y2 - y1);
         float side = std::max(bboxWidth, bboxHeight);
-        bbox.x1 = ((x1) + (bboxWidth - side) * 0.5f);
-        bbox.y1 = ((y1) + (bboxHeight - side) * 0.5f);
-        bbox.x2 = ((bbox.x1) + side);
-        bbox.y2 = ((bbox.y1) + side);
+        bbox.x1 = static_cast<int>(static_cast<float>(x1) + (bboxWidth - side) * 0.5f);
+        bbox.y1 = static_cast<int>(static_cast<float>(y1) + (bboxHeight - side) * 0.5f);
+        bbox.x2 = static_cast<int>(static_cast<float>(bbox.x1) + side);
+        bbox.y2 = static_cast<int>(static_cast<float>(bbox.y1) + side);
         return bbox;
     }
 };
@@ -97,10 +97,10 @@ struct Face {
                 face.bbox.x2 - face.bbox.x1 + static_cast<float>(addOne);
             float bboxHeight =
                 face.bbox.y2 - face.bbox.y1 + static_cast<float>(addOne);
-            face.bbox.x1 = face.bbox.x1 + ((face.regression[1]) * bboxWidth);
-            face.bbox.y1 = face.bbox.y1 + ((face.regression[0]) * bboxHeight);
-            face.bbox.x2 = face.bbox.x2 + ((face.regression[3]) * bboxWidth);
-            face.bbox.y2 = face.bbox.y2 + ((face.regression[2]) * bboxHeight);
+            face.bbox.x1 = static_cast<int>(static_cast<float>(face.bbox.x1) + (face.regression[1] * bboxWidth));
+            face.bbox.y1 = static_cast<int>(static_cast<float>(face.bbox.y1) + (face.regression[0] * bboxHeight));
+            face.bbox.x2 = static_cast<int>(static_cast<float>(face.bbox.x2) + (face.regression[3] * bboxWidth));
+            face.bbox.y2 = static_cast<int>(static_cast<float>(face.bbox.y2) + (face.regression[2] * bboxHeight));
         }
     }
 
@@ -141,22 +141,22 @@ struct Face {
             //std::cout << "runNMS indices size inside while " << indices.size() << " idx " << idx << std::endl;
             std::vector<int> tmpIndices = indices;
             indices.clear();
-            const float  area1 = (faces[idx].bbox.x2 - faces[idx].bbox.x1 + 1) *
-                (faces[idx].bbox.y2 - faces[idx].bbox.y1 + 1);
+            const float  area1 = static_cast<float>(faces[idx].bbox.x2 - faces[idx].bbox.x1 + 1) *
+                static_cast<float>(faces[idx].bbox.y2 - faces[idx].bbox.y1 + 1);
             for (size_t i = 1; i < tmpIndices.size(); ++i) {
                 int tmpIdx = tmpIndices[i];
                 //std::cout << "runNMS tmpIdx " << tmpIdx << std::endl;
-                const float interX1 = std::max(faces[idx].bbox.x1, faces[tmpIdx].bbox.x1);
-                const float interY1 = std::max(faces[idx].bbox.y1, faces[tmpIdx].bbox.y1);
-                const float interX2 = std::min(faces[idx].bbox.x2, faces[tmpIdx].bbox.x2);
-                const float interY2 = std::min(faces[idx].bbox.y2, faces[tmpIdx].bbox.y2);
+                const float interX1 = std::max(static_cast<float>(faces[idx].bbox.x1), static_cast<float>(faces[tmpIdx].bbox.x1));
+                const float interY1 = std::max(static_cast<float>(faces[idx].bbox.y1), static_cast<float>(faces[tmpIdx].bbox.y1));
+                const float interX2 = std::min(static_cast<float>(faces[idx].bbox.x2), static_cast<float>(faces[tmpIdx].bbox.x2));
+                const float interY2 = std::min(static_cast<float>(faces[idx].bbox.y2), static_cast<float>(faces[tmpIdx].bbox.y2));
 
                 const float bboxWidth = std::max(0.0f, (interX2 - interX1 + 1));
                 const float bboxHeight = std::max(0.0f, (interY2 - interY1 + 1));
 
                 const float interArea = bboxWidth * bboxHeight;
-                const float area2 = (faces[tmpIdx].bbox.x2 - faces[tmpIdx].bbox.x1 + 1) *
-                    (faces[tmpIdx].bbox.y2 - faces[tmpIdx].bbox.y1 + 1);
+                const float area2 = static_cast<float>(faces[tmpIdx].bbox.x2 - faces[tmpIdx].bbox.x1 + 1) *
+                    static_cast<float>(faces[tmpIdx].bbox.y2 - faces[tmpIdx].bbox.y1 + 1);
                 float overlap = 0.0f;
                 if (useMin) {
                     overlap = interArea / std::min(area1, area2);
@@ -242,8 +242,8 @@ std::vector<Face> buildFaces(const cv::Mat& scores,
             //faceBox.y2 = (static_cast<double>(y) * P_NET_STRIDE + P_NET_WINDOW_SIZE - 1.0) / scaleFactor;
             faceBox.x1 = std::max(0, static_cast<int>((static_cast<float>(x) * stride) / scaleFactor));
             faceBox.y1 = std::max(0, static_cast<int>((static_cast<float>(y) * stride) / scaleFactor));
-            faceBox.x2 = static_cast<int>((static_cast<float>(x) * stride + P_NET_WINDOW_SIZE - 1.0) / scaleFactor);
-            faceBox.y2 = static_cast<int>((static_cast<float>(y) * stride + P_NET_WINDOW_SIZE - 1.0) / scaleFactor);
+            faceBox.x2 = static_cast<int>((static_cast<float>(x) * stride + P_NET_WINDOW_SIZE - 1.0f) / scaleFactor);
+            faceBox.y2 = static_cast<int>((static_cast<float>(y) * stride + P_NET_WINDOW_SIZE - 1.0f) / scaleFactor);
             faceInfo.regression[0] = reg_data[i];
             faceInfo.regression[1] = reg_data[i + size];
             faceInfo.regression[2] = reg_data[i + 2 * size];
@@ -687,13 +687,13 @@ int main(int argc, char* argv[]) {
     const auto input_file_name = cmd.get<std::string>("input");
     const auto model_path_p = cmd.get<std::string>("mtcnnpm");
     const auto target_dev_p = cmd.get<std::string>("mtcnnpd");
-    const auto conf_thresh_p = cmd.get<double>("thrp");
+    const auto conf_thresh_p = cmd.get<float>("thrp");
     const auto model_path_r = cmd.get<std::string>("mtcnnrm");
     const auto target_dev_r = cmd.get<std::string>("mtcnnrd");
-    const auto conf_thresh_r = cmd.get<double>("thrr");
+    const auto conf_thresh_r = cmd.get<float>("thrr");
     const auto model_path_o = cmd.get<std::string>("mtcnnom");
     const auto target_dev_o = cmd.get<std::string>("mtcnnod");
-    const auto conf_thresh_o = cmd.get<double>("thro");
+    const auto conf_thresh_o = cmd.get<float>("thro");
     const auto use_half_scale = cmd.get<bool>("half_scale");
 
     std::vector<cv::Size> level_size;
