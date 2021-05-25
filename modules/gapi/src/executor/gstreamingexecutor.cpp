@@ -1073,12 +1073,16 @@ cv::gimpl::GStreamingExecutor::GStreamingExecutor(std::unique_ptr<ade::Graph> &&
 
     // Very rough estimation to limit internal queue sizes.
     // Pipeline depth is equal to number of its (pipeline) steps.
+#if 0
     const auto queue_capacity = 3*std::count_if
         (m_gim.nodes().begin(),
          m_gim.nodes().end(),
          [&](ade::NodeHandle nh) {
             return m_gim.metadata(nh).get<NodeKind>().k == NodeKind::ISLAND;
          });
+#else
+    const auto queue_capacity = 1;
+#endif
 
     auto sync_policy = cv::gimpl::getCompileArg<cv::gapi::streaming::sync_policy>(m_comp_args)
                        .value_or(cv::gapi::streaming::sync_policy::dont_sync);
