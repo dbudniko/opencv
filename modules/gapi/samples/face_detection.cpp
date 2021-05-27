@@ -740,7 +740,7 @@ int main(int argc, char* argv[]) {
     auto pipeline_mtcnn = graph_mtcnn.compileStreaming(cv::compile_args(networks_mtcnn, kernels_mtcnn));
 
     std::cout << "Reading " << input_file_name << std::endl;
-#if 0
+#if 1
     // Input image
     cv::TickMeter tm;
     //static (comment out for video cap)
