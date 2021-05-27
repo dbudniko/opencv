@@ -305,13 +305,13 @@ G_API_OP(SwapFaces,
     }
 };
 
-G_API_OP(Transpose,
-         <cv::GMat(cv::GMat)>,
-         "sample.custom.mtcnn.transpose") {
-          static cv::GMatDesc outMeta(const cv::GMatDesc in) {
-               return in.withSize(cv::Size(in.size.height, in.size.width));
-    }
-};
+//G_API_OP(Transpose,
+//         <cv::GMat(cv::GMat)>,
+//         "sample.custom.mtcnn.transpose") {
+//          static cv::GMatDesc outMeta(const cv::GMatDesc in) {
+//               return in.withSize(cv::Size(in.size.height, in.size.width));
+//    }
+//};
 
 //Custom kernels implementation
 GAPI_OCV_KERNEL(OCVBuildFaces, BuildFaces) {
@@ -455,12 +455,12 @@ GAPI_OCV_KERNEL(OCVSwapFaces, SwapFaces) {
     }
 };// GAPI_OCV_KERNEL(SwapFaces)
 
-GAPI_OCV_KERNEL(OCVTranspose, Transpose) {
-    static void run(const cv::Mat &in_mat,
-                    cv::Mat &out_mat) {
-        cv::transpose(in_mat, out_mat);
-    }
-};// GAPI_OCV_KERNEL(Transpose)
+//GAPI_OCV_KERNEL(OCVTranspose, Transpose) {
+//    static void run(const cv::Mat &in_mat,
+//                    cv::Mat &out_mat) {
+//        cv::transpose(in_mat, out_mat);
+//    }
+//};// GAPI_OCV_KERNEL(Transpose)
 } // anonymous namespace
 } // namespace custom
 
@@ -620,7 +620,8 @@ int main(int argc, char* argv[]) {
     //Preprocessing BGR2RGB + transpose (NCWH is expected instead of NCHW)
     cv::GMat in_original;
     cv::GMat in_originalRGB = cv::gapi::BGR2RGB(in_original);
-    cv::GMat in_originalRGB_transposed = custom::Transpose::on(in_originalRGB);
+    //cv::GMat in_originalRGB_transposed = custom::Transpose::on(in_originalRGB);
+    cv::GMat in_originalRGB_transposed = cv::gapi::transpose(in_originalRGB);
     cv::GOpaque<cv::Size> in_sz = cv::gapi::streaming::size(in_original);
     //cv::GOpaque<cv::Size> in_sz = cv::gapi::streaming::size(in_originalRGB_transposed);
     cv::GMat in_resized[MAX_PYRAMID_LEVELS];
@@ -633,7 +634,8 @@ int main(int argc, char* argv[]) {
 
     //The very first PNet pyramid layer to init total_faces[0]
     in_resized[0] = cv::gapi::resize(in_originalRGB, level_size[0]);
-    in_transposed[0] = custom::Transpose::on(in_resized[0]);
+    //in_transposed[0] = custom::Transpose::on(in_resized[0]);
+    in_transposed[0] = cv::gapi::transpose(in_resized[0]);
     std::tie(regressions[0], scores[0]) = run_mtcnn_p(in_transposed[0], get_pnet_level_name(level_size[0]));
     cv::GArray<custom::Face> faces0 = custom::BuildFaces::on(scores[0], regressions[0], static_cast<float>(scales[0]), conf_thresh_p);
     cv::GArray<custom::Face> final_p_faces_for_bb2squares = custom::ApplyRegression::on(faces0, true);
@@ -644,7 +646,8 @@ int main(int argc, char* argv[]) {
     for (int i = 1; i < pyramid_levels; ++i)
     {
         in_resized[i] = cv::gapi::resize(in_originalRGB, level_size[i]);
-        in_transposed[i] = custom::Transpose::on(in_resized[i]);
+        //in_transposed[i] = custom::Transpose::on(in_resized[i]);
+        in_transposed[i] = cv::gapi::transpose(in_resized[i]);
         std::tie(regressions[i], scores[i]) = run_mtcnn_p(in_transposed[i], get_pnet_level_name(level_size[i]));
         cv::GArray<custom::Face> faces = custom::BuildFaces::on(scores[i], regressions[i], static_cast<float>(scales[i]), conf_thresh_p);
         cv::GArray<custom::Face> final_p_faces_for_bb2squares_i = custom::ApplyRegression::on(faces, true);
@@ -732,7 +735,7 @@ int main(int argc, char* argv[]) {
                                           , custom::OCVRNetPostProc
                                           , custom::OCVONetPostProc
                                           , custom::OCVSwapFaces
-                                          , custom::OCVTranspose
+                                          //, custom::OCVTranspose
     >();
     auto pipeline_mtcnn = graph_mtcnn.compileStreaming(cv::compile_args(networks_mtcnn, kernels_mtcnn));
 
